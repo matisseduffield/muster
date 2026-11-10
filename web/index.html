@@ -139,7 +139,7 @@ a { color: inherit; }
 }
 .bet-tag { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--accent); }
 .bet-when { font-size: 23px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; margin-top: 2px; }
-.bet-who { font-size: 14.5px; opacity: .82; margin-top: 3px; }
+.bet-who { font-size: 14.5px; opacity: .82; margin-top: 3px; overflow-wrap: anywhere; }
 .bet-next { font-size: 13.5px; opacity: .62; margin-top: 8px; }
 .bet.plain { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); cursor: default; }
 .bet.plain .bet-who { opacity: 1; color: var(--muted); }
@@ -463,7 +463,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
       <form data-form="join" autocomplete="off">
         <label class="field"><span>Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
-        ${ui.dup ? `<p class="hint">There's already a ${esc(ui.dupName)} in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
+        ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
       </form>
       ${names ? `<div style="margin-top:28px">${names}</div>` : ''}`;
   }
@@ -481,7 +481,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
         <button class="btn" data-act="invite">Invite</button>
         <button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button>
       </header>
-      ${G.offline ? '<p class="notice">Offline. Your answers will send when you are back.</p>' : ''}
+      ${G.offline ? `<p class="notice">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
       ${bet(s, bets, now)}
       <p class="legend"><span><i class="mk f"></i>free</span><span><i class="mk m"></i>maybe</span><span><i class="mk b"></i>busy</span><span><i class="mk n"></i>no answer</span><span>Tap a slot to answer.</span></p>
       ${weekList.map(w => week(w, now, top)).join('')}`;
@@ -498,7 +498,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     return `<button class="bet" data-act="jump" data-w="${b.week}">
       <span class="bet-tag">Best bet</span>
       <div class="bet-when">${L.slotWhen(b.week, b.i)}</div>
-      <div class="bet-who">${line}${plan ? ` Called: ${esc(plan.text)}.` : ''}</div>
+      <div class="bet-who">${line}${plan ? ` Called: ${esc(plan.text)}` : ''}</div>
       ${second ? `<div class="bet-next">Then ${L.slotWhen(second.week, second.i)}, ${second.all ? 'everyone' : second.f} free.</div>` : ''}
     </button>`;
   }
@@ -658,7 +658,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
   // Hand a message and the group's link to the share sheet, or copy them.
   async function send(text, whole) {
     const url = `${location.origin}/g/${G.id}`;
-    const copy = async () => { try { await navigator.clipboard.writeText(whole ? `${text} ${url}` : url); toast(whole ? 'Message copied' : 'Link copied'); } catch (x) { toast(url); } };
+    const copy = async () => { try { await navigator.clipboard.writeText(whole ? `${text} ${url}` : url); toast(whole ? 'Message copied' : 'Link copied'); } catch (x) { toast("Couldn't copy. The link is in the address bar."); } };
     if (!navigator.share) return copy();
     try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
   }

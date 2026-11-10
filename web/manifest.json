@@ -1,7 +1,7 @@
 {
   "name": "Muster",
   "short_name": "Muster",
-  "description": "See when your friends are free this weekend.",
+  "description": "Mark when you are free this weekend, and see when everyone else is.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
