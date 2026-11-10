@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- A group link is /g/<id>, but the files sit at the top: without this, lib.js and the fonts would be looked for under /g/. -->
+<script>if (location.pathname.startsWith('/g/')) document.write('<base href="/">');</script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ECE7DB" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10141C" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Muster">
+<meta name="description" content="Mark when you are free this weekend, and see when everyone else is.">
+<meta property="og:title" content="Muster">
+<meta property="og:description" content="Mark when you are free this weekend, and see when everyone else is.">
+<meta property="og:site_name" content="Muster">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Muster">
+<title>Muster</title>
+<style>
+/* Hanken Grotesk ships with the page (fonts/, SIL OFL). */
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin.woff2") format("woff2");
+  font-weight: 400 600;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Hanken Grotesk";
+  src: url("fonts/hanken-grotesk-latin-ext.woff2") format("woff2");
+  font-weight: 400 600;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Paper and ink. Days are light cells, nights are dark ones, and marigold
+   means it's on: everyone's free, the best bet, or a plan's been called. */
+:root {
+  --bg: #ECE7DB;
+  --card: #F6F2E8;
+  --ink: #1A1F2B;
+  --muted: #64635C;
+  --line: #D3CCBB;
+  --day: #FBF8F0;
+  --day-ink: #1A1F2B;
+  --day-line: #D3CCBB;
+  --night: #1C2333;
+  --night-ink: #EDE8DA;
+  --night-line: #1C2333;
+  --accent: #F2B01E;
+  --bet: #1C2333;
+  --on-accent: #1A1F2B;
+  --on-ink: #F6F2E8;
+  --backdrop: rgba(16, 20, 28, .45);
+  --font: "Hanken Grotesk", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141C;
+    --card: #181D28;
+    --ink: #ECE7DB;
+    --muted: #A09E94;
+    --line: #2C3344;
+    --day: #36415A;
+    --day-ink: #F5F1E6;
+    --day-line: #36415A;
+    --night: #06080D;
+    --night-ink: #D6D1C3;
+    --night-line: #262D3C;
+    --bet: #262F44;
+    --on-ink: #10141C;
+    --backdrop: rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.4 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+h1, h2, h3, p { margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+#app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: calc(18px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-left)) calc(56px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+}
+
+/* The marks: one per person. Free is a full dot, maybe half of one, busy a dash. */
+.mk { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
+.mk.f { background: currentColor; }
+.mk.m { background: linear-gradient(90deg, currentColor 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px currentColor; }
+.mk.b { height: 2px; border-radius: 1px; background: currentColor; opacity: .6; }
+.mk.n { width: 3px; height: 3px; margin: 0 2.5px; background: currentColor; opacity: .32; }
+.mk.u { opacity: .5; }
+
+.btn {
+  appearance: none; border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-ink);
+  border-radius: 9px; min-height: 44px; padding: 0 16px; font-weight: 600;
+}
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.sm { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.btn.wide { width: 100%; }
+.text-btn { appearance: none; border: 0; background: none; padding: 8px 0; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.text-btn.quiet { font-weight: 400; color: var(--muted); }
+
+/* Top of a group */
+.top { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.top-name { flex: 1; min-width: 0; }
+.word { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--muted); padding: 4px 0; }
+.word .mk { width: 6px; height: 6px; }
+.word .mk.b { height: 2px; }
+.top h1 { font-size: 26px; line-height: 1.12; font-weight: 600; letter-spacing: -.015em; overflow-wrap: anywhere; }
+.icon-btn { appearance: none; border: 1.5px solid var(--line); background: transparent; border-radius: 9px; width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
+
+.notice { font-size: 14px; color: var(--muted); margin: -6px 0 12px; }
+
+/* Best bet */
+.bet {
+  display: block; width: 100%; text-align: left; appearance: none; border: 0;
+  background: var(--bet); color: #EDE8DA; border-radius: 12px; padding: 14px 16px 15px; margin-bottom: 10px;
+}
+.bet-tag { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--accent); }
+.bet-when { font-size: 23px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; margin-top: 2px; }
+.bet-who { font-size: 14.5px; opacity: .82; margin-top: 3px; }
+.bet-next { font-size: 13.5px; opacity: .62; margin-top: 8px; }
+.bet.plain { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); cursor: default; }
+.bet.plain .bet-who { opacity: 1; color: var(--muted); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 13px; color: var(--muted); margin: 0 2px 22px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* A weekend: Friday, Saturday, Sunday across; day above, night below. */
+.wk { margin-bottom: 26px; scroll-margin-top: 14px; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 6px; }
+.date { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 2px 6px; min-width: 0; }
+.date-rel { font-size: 13px; font-weight: 600; color: var(--muted); }
+.date-days { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.05; white-space: nowrap; }
+.date-month { font-size: 15px; font-weight: 600; }
+.p0 { grid-column: 1; grid-row: 2; }
+.p1 { grid-column: 2; grid-row: 1; }
+.p2 { grid-column: 2; grid-row: 2; }
+.p3 { grid-column: 3; grid-row: 1; }
+.p4 { grid-column: 3; grid-row: 2; }
+
+.cell {
+  appearance: none; border: 1px solid var(--c-line); background: var(--c-bg); color: var(--c-ink);
+  border-radius: 10px; padding: 9px 9px 9px; min-height: 118px; min-width: 0;
+  display: flex; flex-direction: column; gap: 5px; text-align: left;
+}
+.cell.day { --c-bg: var(--day); --c-ink: var(--day-ink); --c-line: var(--day-line); }
+.cell.night { --c-bg: var(--night); --c-ink: var(--night-ink); --c-line: var(--night-line); }
+.cell.all { --c-bg: var(--accent); --c-ink: var(--on-accent); --c-line: var(--accent); }
+.cell.best { outline: 2.5px solid var(--accent); outline-offset: 1.5px; }
+.cell.called { box-shadow: inset 0 4px 0 var(--accent); }
+.cell.all.called { box-shadow: inset 0 4px 0 var(--on-accent); }
+.cell.past { opacity: .36; cursor: default; }
+.cell:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 2px; }
+.c-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+.c-top svg { opacity: .75; }
+.c-n { display: flex; align-items: baseline; gap: 5px; font-size: 13px; }
+.c-n b { font-size: 27px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+.c-n span { opacity: .72; }
+.c-roll { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 8px; }
+.c-me {
+  margin-top: auto; align-self: stretch; text-align: center; font-size: 12.5px; font-weight: 600; line-height: 1.15;
+  border: 1.5px solid transparent; border-radius: 6px; padding: 5px 4px;
+}
+.c-roll + .c-me { margin-top: auto; }
+.c-me.f { background: var(--c-ink); color: var(--c-bg); }
+.c-me.m { border-color: var(--c-ink); }
+.c-me.b { opacity: .62; text-decoration: line-through; text-decoration-thickness: 1px; }
+.c-me.n { border: 1.5px dashed color-mix(in srgb, var(--c-ink) 50%, transparent); font-weight: 400; }
+.c-me.u.f { background: color-mix(in srgb, var(--c-ink) 62%, var(--c-bg)); }
+.c-me.u.m { border-color: color-mix(in srgb, var(--c-ink) 55%, transparent); }
+
+/* Plans that have been called */
+.plan { background: var(--accent); color: var(--on-accent); border-radius: 10px; padding: 11px 12px 10px; margin-top: 6px; }
+.plan-when { font-size: 13px; font-weight: 600; opacity: .8; }
+.plan-text { font-size: 18px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.plan-who { font-size: 13.5px; margin-top: 3px; opacity: .85; }
+.plan-acts { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
+.plan .btn { border-color: var(--on-accent); background: transparent; color: var(--on-accent); min-width: 58px; }
+.plan .btn.on { background: var(--on-accent); color: var(--accent); }
+.plan .text-btn { margin-left: auto; font-size: 13.5px; font-weight: 400; color: var(--on-accent); }
+
+.under { display: flex; align-items: center; gap: 12px; margin-top: 4px; min-height: 40px; padding: 0 2px; }
+.under-text { flex: 1; min-width: 0; font-size: 14px; color: var(--muted); }
+.under .text-btn { font-size: 14px; flex: none; }
+
+/* The roll: everyone by name, slot by slot */
+.roll { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px 6px; margin-top: 2px; }
+.r-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(5, 38px); align-items: center; min-height: 34px; border-top: 1px solid var(--line); }
+.r-row > span { display: grid; place-items: center; }
+.r-row > .r-name { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
+.r-row.me .r-name { font-weight: 600; }
+.r-head { border-top: 0; min-height: 40px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.r-head > span { gap: 1px; line-height: 1.1; }
+.r-row .mk { width: 11px; height: 11px; }
+.r-row .mk.b { height: 2.5px; width: 11px; }
+.r-row .mk.n { width: 4px; height: 4px; margin: 0; }
+.r-row .gone { opacity: .3; }
+.fills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* Sheets */
+.backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 600px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--bg); border-radius: 16px 16px 0 0; padding: 18px max(16px, env(safe-area-inset-left)) calc(22px + env(safe-area-inset-bottom));
+  outline: 0;
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sheet h2 { font-size: 20px; font-weight: 600; }
+.sheet h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin: 22px 0 8px; }
+.sheet h3:first-of-type { margin-top: 4px; }
+.hint { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+
+.field { display: block; margin-bottom: 12px; }
+.field > span { display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
+input[type=text] {
+  width: 100%; min-height: 46px; padding: 0 12px; background: var(--day); color: var(--day-ink);
+  border: 1.5px solid var(--line); border-radius: 9px; font-size: 16px;
+}
+input[type=text]:focus { outline: 0; border-color: var(--ink); }
+input::placeholder { color: var(--muted); opacity: .75; }
+.row { display: flex; gap: 8px; }
+.row input { flex: 1; min-width: 0; }
+
+.slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin-bottom: 12px; }
+.slot { appearance: none; border: 1.5px solid var(--line); background: transparent; border-radius: 9px; min-height: 54px; padding: 4px 2px; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.slot.on { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
+.slot:disabled { opacity: .3; cursor: default; }
+
+.usual { max-width: 330px; }
+.usual .cell { min-height: 66px; }
+.usual .date { font-size: 13px; color: var(--muted); padding-bottom: 4px; }
+
+.people { border-top: 1px solid var(--line); }
+.person { display: flex; align-items: center; min-height: 46px; border-bottom: 1px solid var(--line); }
+.person span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person em { font-style: normal; color: var(--muted); font-size: 14px; }
+
+/* Home and joining */
+.home-head { margin: 22px 0 26px; }
+.home-head .big { display: flex; align-items: center; gap: 12px; font-size: 44px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.home-head .big i { color: var(--ink); }
+.home-head .big .mk { width: 13px; height: 13px; }
+.home-head .big .mk.b { height: 3px; }
+.home-head .big .mk.f { color: var(--accent); }
+.home-head p { font-size: 18px; margin-top: 12px; max-width: 26em; }
+.groups { margin-bottom: 28px; border-top: 1px solid var(--line); }
+.groups a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 18px; font-weight: 600; }
+.groups a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sub { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+.fine { font-size: 13.5px; color: var(--muted); margin-top: 14px; }
+.names { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+.lone { margin-top: 18vh; }
+.lone h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+.lone p { color: var(--muted); margin-bottom: 16px; }
+
+#toast {
+  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+  background: var(--ink); color: var(--on-ink); border-radius: 9px; padding: 10px 14px; font-size: 14.5px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity .15s; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<div id="toast" role="status"></div>
+<script src="lib.js?v=1"></script>
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+<script>
+(() => {
+  const L = Muster;
+  const app = document.getElementById('app'), sheetRoot = document.getElementById('sheet'), toastEl = document.getElementById('toast');
+  const WEEKS = 8;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const rid = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const clean = (s, max) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, max);
+  const ls = {
+    get(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (e) {} },
+  };
+
+  const SUN = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="currentColor"/><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 1v1.8M8 13.2V15M1 8h1.8M13.2 8H15M3.05 3.05l1.3 1.3M11.65 11.65l1.3 1.3M3.05 12.95l1.3-1.3M11.65 4.35l1.3-1.3"/></svg>';
+  const MOON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.6 10.2A6.2 6.2 0 0 1 5.8 2.4a6.2 6.2 0 1 0 7.8 7.8z"/></svg>';
+  const GEAR = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h9M16 6h1M3 14h1M8 14h9"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="14" r="2"/></svg>';
+  const icon = i => (L.SLOTS[i].part === 'day' ? SUN : MOON);
+  const WORD = { f: 'Free', m: 'Maybe', b: 'Busy' };
+  const mk = a => `<i class="mk ${a.v === '-' ? 'n' : a.v}${a.usual ? ' u' : ''}"></i>`;
+  const LOGO = '<i class="mk f"></i><i class="mk m"></i><i class="mk b"></i>';
+
+  let saved = ls.get('muster.groups', []);
+  let G = null;            // the open group: { id, me, state, queue, gone, failed, offline }
+  let ui = { open: {}, sheet: null, confirm: null };
+  let view = '', drawn = null;
+
+  // ---- Keeping in step with the server ----
+
+  const persist = g => ls.set('muster.g.' + g.id, { state: g.state, queue: g.queue });
+  function remember(g) {
+    const at = saved.findIndex(s => s.id === g.id);
+    const row = { id: g.id, name: g.state ? g.state.group.name : (at >= 0 ? saved[at].name : ''), me: g.me };
+    if (at >= 0) saved[at] = row; else saved.unshift(row);
+    ls.set('muster.groups', saved);
+  }
+
+  function forget(id) { saved = saved.filter(s => s.id !== id); ls.set('muster.groups', saved); ls.del('muster.g.' + id); }
+
+  let busy = false, fails = 0, again = 0;
+  async function sync() {
+    if (!G || busy) return;
+    const g = G;
+    busy = true;
+    clearTimeout(again);
+    let ok = false;
+    try {
+      const sending = g.queue.slice();
+      const res = sending.length
+        ? await fetch(`/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: sending }) })
+        : await fetch(`/api/g/${g.id}`, { cache: 'no-store', headers: g.state && g.state.group.version ? { 'If-None-Match': `"${g.state.group.version}"` } : {} });
+      if (res.status === 304) {
+        ok = true;
+      } else if (res.ok) {
+        const fresh = await res.json();
+        g.queue = g.queue.slice(sending.length);
+        g.queue.forEach(op => L.applyOp(fresh, op));
+        g.state = fresh;
+        ok = true;
+        if (!g.left) { persist(g); if (g.me) remember(g); }
+      } else if (res.status === 404) {
+        g.gone = true; g.queue = []; ok = true; forget(g.id);
+      } else if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429 && sending.length) {
+        // The server won't take these: drop them rather than jam the queue.
+        g.queue = g.queue.slice(sending.length); if (!g.left) persist(g); ok = true;
+      } else throw new Error(String(res.status));
+    } catch (e) {
+      g.failed = true;
+    }
+    busy = false;
+    if (g !== G) return sync();
+    const was = g.offline;
+    g.offline = !ok;
+    if (ok) { fails = 0; g.failed = false; } else { fails = Math.min(fails + 1, 5); again = setTimeout(sync, 1500 * 2 ** fails); }
+    refresh(was !== g.offline);
+    if (ok && g.queue.length) sync();
+  }
+
+  // A change: shown at once, kept until the server has it.
+  function push(...ops) {
+    ops.forEach(op => L.applyOp(G.state, op));
+    G.queue.push(...ops);
+    persist(G);
+    sync();
+  }
+
+  setInterval(() => { if (!document.hidden && G) sync(); }, 20000);
+  setInterval(() => { if (!document.hidden) refresh(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && G) { sync(); refresh(); } });
+  window.addEventListener('online', () => sync());
+
+  // ---- Which screen ----
+
+  function route() {
+    const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
+    ui = { open: {}, sheet: null, confirm: null };
+    if (!m) { G = null; }
+    else {
+      const id = m[1], s = saved.find(x => x.id === id), c = ls.get('muster.g.' + id, null);
+      G = { id, me: s ? s.me : null, state: c ? c.state : null, queue: c && c.queue ? c.queue : [] };
+      sync();
+    }
+    view = '';
+    render();
+    renderSheet();
+    window.scrollTo(0, 0);
+  }
+  let path = location.pathname;
+  function go(to) { history.pushState(null, '', to); path = location.pathname; route(); }
+  // Back closes an open sheet and stays on the board.
+  window.addEventListener('popstate', () => {
+    if (location.pathname === path) { if (ui.sheet) { ui.sheet = null; ui.confirm = null; renderSheet(); } return; }
+    path = location.pathname; route();
+  });
+
+  const kind = () => !G ? 'home' : G.gone ? 'gone' : !G.state ? (G.failed ? 'failed' : 'loading') : (!G.me || !L.member(G.state, G.me)) ? 'join' : 'board';
+  // After news from the server: redraw the board, but leave a form someone may be typing in.
+  function refresh(force) {
+    const k = kind();
+    if (k !== view || k === 'board' || force && k !== 'home' && k !== 'join') render();
+  }
+
+  function render() {
+    view = kind();
+    document.title = G && G.state ? `${G.state.group.name} · Muster` : 'Muster';
+    if (view !== 'board' && ui.sheet) { ui.sheet = null; renderSheet(); }
+    const html = ({ home, gone, failed, loading, join, board })[view]();
+    // Nothing new: leave the page alone, so focus and half-typed names survive.
+    if (html === drawn) return;
+    drawn = html;
+    app.innerHTML = html;
+  }
+
+  // ---- Screens ----
+
+  function home() {
+    const list = saved.length ? `<p class="sub">Your groups</p><nav class="groups">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav>` : '';
+    return `
+      <header class="home-head">
+        <div class="big">Muster ${LOGO}</div>
+        <p>Who's free this weekend, without asking the group chat.</p>
+      </header>
+      ${list}
+      <p class="sub">${saved.length ? 'Start another' : 'Start a group'}</p>
+      <form data-form="create" autocomplete="off">
+        <label class="field"><span>Group name</span><input type="text" name="group" maxlength="40" placeholder="The Usual Suspects" required enterkeyhint="next"></label>
+        <label class="field"><span>Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
+        <button class="btn wide">Start</button>
+      </form>
+      <p class="fine">No accounts. Whoever has the group's link can see it and answer, so send it to the group and nobody else.</p>`;
+  }
+  const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
+  const wordmark = () => `<a class="word" href="/" data-nav aria-label="Muster, all your groups">Muster ${LOGO}</a>`;
+
+  const loading = () => `${wordmark()}<div class="lone"><p>Fetching the group.</p></div>`;
+  const gone = () => `${wordmark()}<div class="lone"><h1>This link doesn't lead to a group.</h1><p>Check it's the whole link, or ask whoever sent it.</p><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="/" data-nav>Start a group</a></div>`;
+  const failed = () => `${wordmark()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
+
+  function join() {
+    const s = G.state;
+    const names = s.members.length ? `<p class="sub">Already in it? Tap your name.</p><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div>` : '';
+    return `
+      ${wordmark()}
+      <header class="home-head" style="margin-top:14px">
+        <div class="big" style="font-size:34px;letter-spacing:-.02em">${esc(s.group.name)}</div>
+        <p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : 'Add yourself to mark when you are free.'}</p>
+      </header>
+      <form data-form="join" autocomplete="off">
+        <label class="field"><span>Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
+        <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
+        ${ui.dup ? `<p class="hint">There's already a ${esc(ui.dupName)} in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
+      </form>
+      ${names ? `<div style="margin-top:28px">${names}</div>` : ''}`;
+  }
+
+  // Me first, then everyone in the group's order.
+  const order = () => [L.member(G.state, G.me), ...G.state.members.filter(m => m.id !== G.me)];
+  const who = m => (m.id === G.me ? 'You' : m.name);
+
+  function board() {
+    const s = G.state, now = new Date(), weekList = L.weeks(now, WEEKS);
+    const bets = L.best(s, weekList, now), top = bets[0];
+    return `
+      <header class="top">
+        <div class="top-name">${wordmark()}<h1>${esc(s.group.name)}</h1></div>
+        <button class="btn" data-act="invite">Invite</button>
+        <button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button>
+      </header>
+      ${G.offline ? '<p class="notice">Offline. Your answers will send when you are back.</p>' : ''}
+      ${bet(s, bets, now)}
+      <p class="legend"><span><i class="mk f"></i>free</span><span><i class="mk m"></i>maybe</span><span><i class="mk b"></i>busy</span><span><i class="mk n"></i>no answer</span><span>Tap a slot to answer.</span></p>
+      ${weekList.map(w => week(w, now, top)).join('')}`;
+  }
+
+  function bet(s, bets, now) {
+    if (s.members.length < 2) return `<div class="bet plain"><div class="bet-when">Just you so far.</div><div class="bet-who">Send the link, then mark when you are free.</div></div>`;
+    if (!bets.length) return `<div class="bet plain"><div class="bet-when">Nothing lines up yet.</div><div class="bet-who">No slot has two people free.</div></div>`;
+    const b = bets[0], r = L.roll(s, b.week, b.i);
+    const plan = s.plans.find(p => p.w === b.week && p.i === b.i);
+    let line = b.all ? "Everyone's free." : `${b.f} of ${b.n} free.`;
+    if (r.m.length) line += ` ${esc(L.names(r.m))} ${r.m.length === 1 ? 'is a maybe' : 'are maybes'}.`;
+    const second = bets.find(x => x !== b && !(x.week === b.week && x.i === b.i));
+    return `<button class="bet" data-act="jump" data-w="${b.week}">
+      <span class="bet-tag">Best bet</span>
+      <div class="bet-when">${L.slotWhen(b.week, b.i)}</div>
+      <div class="bet-who">${line}${plan ? ` Called: ${esc(plan.text)}.` : ''}</div>
+      ${second ? `<div class="bet-next">Then ${L.slotWhen(second.week, second.i)}, ${second.all ? 'everyone' : second.f} free.</div>` : ''}
+    </button>`;
+  }
+
+  function week(w, now, top) {
+    const s = G.state, n = s.members.length, people = order(), parts = L.rangeParts(w);
+    const cells = L.SLOTS.map((sl, i) => {
+      const past = L.isPast(w, i, now), r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i);
+      const all = n > 1 && r.f.length === n && !past;
+      const cls = ['cell', sl.part, 'p' + i, all && 'all', top && top.week === w && top.i === i && 'best', past && 'past', s.plans.some(p => p.w === w && p.i === i) && 'called'].filter(Boolean).join(' ');
+      const word = mine.v === '-' ? (past ? 'No answer' : 'Answer') : mine.usual ? `Usually ${WORD[mine.v].toLowerCase()}` : WORD[mine.v];
+      const label = `${L.slotWhen(w, i)}. ${r.f.length} of ${n} free. You: ${mine.v === '-' ? 'no answer' : word.toLowerCase()}.`;
+      return `<button class="${cls}" data-act="cell" data-w="${w}" data-i="${i}" aria-label="${label}"${past ? ' disabled' : ''}>
+        <span class="c-top"><span>${sl.day}</span>${icon(i)}</span>
+        <span class="c-n"><b>${r.f.length}</b><span>free</span></span>
+        <span class="c-roll">${people.map(m => mk(L.answer(s, m.id, w, i))).join('')}</span>
+        <span class="c-me ${mine.v === '-' ? 'n' : mine.v}${mine.usual ? ' u' : ''}">${word}</span>
+      </button>`;
+    }).join('');
+
+    const plans = s.plans.filter(p => p.w === w).sort((a, b) => a.i - b.i).map(plan).join('');
+    const wait = L.waiting(s, w, now);
+    const me = wait.some(m => m.id === G.me), others = wait.filter(m => m.id !== G.me);
+    const waitText = !wait.length ? (n > 1 ? "Everyone's answered." : '')
+      : me && !others.length ? "You haven't answered."
+      : `Waiting on ${me ? 'you' + (others.length > 1 ? ', ' : ' and ') : ''}${esc(L.names(others, me ? 2 : 3))}.`;
+    const open = !!ui.open[w];
+    return `<section class="wk" id="wk-${w}">
+      <div class="grid">
+        <div class="date"><span class="date-rel">${L.relLabel(w, now)}</span><span class="date-days">${parts.days}</span><span class="date-month">${parts.month}</span></div>
+        ${cells}
+      </div>
+      ${plans}
+      <div class="under"><span class="under-text">${waitText}</span><button class="text-btn" data-act="roll" data-w="${w}" aria-expanded="${open}">${open ? 'Hide names' : 'Names'}</button></div>
+      ${open ? roll(w, now, people) : ''}
+    </section>`;
+  }
+
+  function roll(w, now, people) {
+    const s = G.state;
+    const left = L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
+    const late = L.waiting(s, w, now).filter(m => m.id !== G.me);
+    const head = `<div class="r-row r-head"><span></span>${L.SLOTS.map((sl, i) => `<span>${sl.day}${icon(i)}</span>`).join('')}</div>`;
+    const rows = people.map(m => `<div class="r-row${m.id === G.me ? ' me' : ''}"><span class="r-name">${esc(who(m))}</span>${L.SLOTS.map((_, i) => `<span${left.includes(i) ? '' : ' class="gone"'}>${mk(L.answer(s, m.id, w, i))}</span>`).join('')}</div>`).join('');
+    const fills = left.length ? `<div class="fills">
+        <button class="btn ghost sm" data-act="fill" data-w="${w}" data-v="f">I'm free all weekend</button>
+        <button class="btn ghost sm" data-act="fill" data-w="${w}" data-v="b">I'm away</button>
+        <button class="btn sm" data-act="call" data-w="${w}">Call a plan</button>
+        ${late.length ? `<button class="btn ghost sm" data-act="nudge" data-w="${w}">Nudge ${late.length > 2 ? late.length + ' people' : esc(L.names(late))}</button>` : ''}
+      </div>` : '';
+    return `<div class="roll">${head}${rows}</div>${fills}`;
+  }
+
+  function plan(p) {
+    const s = G.state, by = L.member(s, p.by);
+    const ins = s.members.filter(m => p.rsvp[m.id] === 'in'), outs = s.members.filter(m => p.rsvp[m.id] === 'out');
+    const mine = p.rsvp[G.me] || '';
+    const list = l => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: m.id === G.me ? 'you' : m.name })), 4));
+    const whoLine = [by ? `${esc(who(by))} called it.` : '', ins.length ? `In: ${list(ins)}.` : 'Nobody in yet.', outs.length ? `Out: ${list(outs)}.` : ''].filter(Boolean).join(' ');
+    const sure = ui.confirm === 'scrap:' + p.id;
+    return `<div class="plan">
+      <div class="plan-when">${L.slotWhen(p.w, p.i)}</div>
+      <div class="plan-text">${esc(p.text)}</div>
+      <div class="plan-who">${whoLine}</div>
+      <div class="plan-acts">
+        <button class="btn sm${mine === 'in' ? ' on' : ''}" data-act="rsvp" data-p="${p.id}" data-v="in" aria-pressed="${mine === 'in'}">In</button>
+        <button class="btn sm${mine === 'out' ? ' on' : ''}" data-act="rsvp" data-p="${p.id}" data-v="out" aria-pressed="${mine === 'out'}">Out</button>
+        ${p.by === G.me || !by ? `<button class="text-btn" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to scrap' : 'Scrap'}</button>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // ---- Sheets ----
+
+  function renderSheet() {
+    const sh = ui.sheet;
+    if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; document.body.style.overflow = ''; return; }
+    const y = sheetRoot.querySelector('.sheet') ? sheetRoot.querySelector('.sheet').scrollTop : 0;
+    // Whatever is half typed survives the redraw, and so does the cursor.
+    const fieldKey = el => el.form ? el.form.dataset.form + '/' + el.name : '';
+    const typed = {}, at = document.activeElement;
+    sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { typed[fieldKey(el)] = el.value; });
+    const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
+    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" tabindex="-1">${sh.kind === 'call' ? callSheet(sh) : settingsSheet()}</div>`;
+    document.body.style.overflow = 'hidden';
+    sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
+      const k = fieldKey(el);
+      if (k in typed) el.value = typed[k];
+      if (k === focused) el.focus({ preventScroll: true });
+    });
+    sheetRoot.querySelector('.sheet').scrollTop = y;
+  }
+  // Opening a sheet never puts the cursor in a field, so the keyboard stays down.
+  function openSheet(sh) {
+    ui.sheet = sh; renderSheet(); sheetRoot.querySelector('.sheet').focus({ preventScroll: true });
+    if (!(history.state && history.state.sheet)) history.pushState({ sheet: 1 }, '');
+  }
+  function closeSheet() { ui.sheet = null; ui.confirm = null; renderSheet(); if (history.state && history.state.sheet) history.back(); }
+  const sheetHead = t => `<div class="sheet-head"><h2>${t}</h2><button class="text-btn" data-act="close">Done</button></div>`;
+
+  function callSheet(sh) {
+    const now = new Date();
+    return `${sheetHead('Call a plan')}
+      <p class="hint" style="margin:-6px 0 12px">${L.relLabel(sh.w, now)}, ${L.rangeLabel(sh.w)}</p>
+      <div class="slots">${L.SLOTS.map((sl, i) => `<button class="slot${sh.i === i ? ' on' : ''}" data-act="slot" data-i="${i}" aria-pressed="${sh.i === i}"${L.isPast(sh.w, i, now) ? ' disabled' : ''}>${sl.day}${icon(i)}</button>`).join('')}</div>
+      <form data-form="call" autocomplete="off">
+        <label class="field"><span>What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
+        <button class="btn wide">Call it</button>
+      </form>
+      <p class="hint">It goes on the weekend for everyone, with you down as in.</p>`;
+  }
+
+  function settingsSheet() {
+    const s = G.state, me = L.member(s, G.me), usual = me.usual || L.BLANK;
+    const cells = L.SLOTS.map((sl, i) => {
+      const v = usual[i];
+      return `<button class="cell ${sl.part} p${i}" data-act="usual" data-i="${i}" aria-label="${sl.full} ${sl.part}: ${v === '-' ? 'no usual' : WORD[v].toLowerCase()}">
+        <span class="c-top"><span>${sl.day}</span>${icon(i)}</span>
+        <span class="c-me ${v === '-' ? 'n' : v}">${v === '-' ? 'Not set' : WORD[v]}</span>
+      </button>`;
+    }).join('');
+    const people = s.members.map(m => {
+      const sure = ui.confirm === 'remove:' + m.id;
+      return `<div class="person"><span>${esc(m.name)}${m.id === G.me ? ' <em>you</em>' : ''}</span>${m.id === G.me ? '' : `<button class="text-btn quiet" data-act="remove" data-id="${m.id}">${sure ? 'Tap again to remove' : 'Remove'}</button>`}</div>`;
+    }).join('');
+    return `${sheetHead('You and the group')}
+      <h3>Your name</h3>
+      <form data-form="rename-me" class="row" autocomplete="off"><input type="text" name="name" maxlength="24" value="${esc(me.name)}" required aria-label="Your name" enterkeyhint="done"><button class="btn ghost">Save</button></form>
+      <h3>Your usual weekend</h3>
+      <div class="grid usual"><div class="date">Tap to set</div>${cells}</div>
+      <p class="hint">Fills in every weekend until you answer it. Football every Saturday? Mark it busy once.</p>
+      <h3>Group name</h3>
+      <form data-form="rename-group" class="row" autocomplete="off"><input type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required aria-label="Group name" enterkeyhint="done"><button class="btn ghost">Save</button></form>
+      <h3>People</h3>
+      <div class="people">${people}</div>
+      <div style="display:flex;gap:18px;margin-top:10px">
+        <button class="text-btn quiet" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>
+        <a class="text-btn quiet" href="/" data-nav>Your other groups</a>
+      </div>`;
+  }
+
+  // ---- Doing things ----
+
+  let toastTimer;
+  function toast(t) { toastEl.textContent = t; toastEl.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200); }
+
+  // Destructive buttons want a second tap; the first one arms them for a few seconds.
+  let confirmTimer;
+  function sure(key) {
+    if (ui.confirm === key) { ui.confirm = null; clearTimeout(confirmTimer); return true; }
+    ui.confirm = key;
+    clearTimeout(confirmTimer);
+    confirmTimer = setTimeout(() => { ui.confirm = null; render(); renderSheet(); }, 4000);
+    return false;
+  }
+
+  // Hand a message and the group's link to the share sheet, or copy them.
+  async function send(text, whole) {
+    const url = `${location.origin}/g/${G.id}`;
+    const copy = async () => { try { await navigator.clipboard.writeText(whole ? `${text} ${url}` : url); toast(whole ? 'Message copied' : 'Link copied'); } catch (x) { toast(url); } };
+    if (!navigator.share) return copy();
+    try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
+  }
+
+  const acts = {
+    cell(d) {
+      const me = L.member(G.state, G.me), i = +d.i;
+      const cur = L.answer(G.state, G.me, d.w, i);
+      push({ t: 'mark', m: G.me, w: d.w, i, v: L.next(cur.v, (me.usual || L.BLANK)[i] !== '-') });
+      render();
+      const el = app.querySelector(`.cell[data-w="${d.w}"][data-i="${i}"]`);
+      if (el) { el.focus({ preventScroll: true }); if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) el.animate([{ transform: 'scale(.955)' }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' }); }
+    },
+    roll(d) { ui.open[d.w] = !ui.open[d.w]; render(); const b = app.querySelector(`[data-act="roll"][data-w="${d.w}"]`); if (b) b.focus({ preventScroll: true }); },
+    fill(d) {
+      const now = new Date();
+      const ops = L.SLOTS.map((_, i) => i).filter(i => !L.isPast(d.w, i, now) && ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i] !== d.v).map(i => ({ t: 'mark', m: G.me, w: d.w, i, v: d.v }));
+      if (ops.length) push(...ops);
+      render();
+    },
+    call(d) {
+      const now = new Date(), b = L.best(G.state, [d.w], now)[0];
+      const first = L.SLOTS.map((_, i) => i).find(i => !L.isPast(d.w, i, now));
+      openSheet({ kind: 'call', w: d.w, i: b ? b.i : first });
+    },
+    slot(d) {
+      ui.sheet.i = +d.i; renderSheet();
+    },
+    rsvp(d) {
+      const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
+      push({ t: 'rsvp', p: d.p, m: G.me, v: p.rsvp[G.me] === d.v ? '' : d.v });
+      render();
+    },
+    scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
+    invite() { send(`${G.state.group.name}: mark when you're free`, false); },
+    // A ready-made message for whoever hasn't answered a weekend.
+    nudge(d) {
+      const now = new Date(), late = L.waiting(G.state, d.w, now).filter(m => m.id !== G.me);
+      if (!late.length) return;
+      const rel = L.relLabel(d.w, now);
+      send(`${L.names(late, 6)}, are you around ${rel[0].toLowerCase() + rel.slice(1)} (${L.rangeLabel(d.w)})? Mark it here:`, true);
+    },
+    settings() { openSheet({ kind: 'settings' }); },
+    close() { closeSheet(); },
+    usual(d) {
+      const me = L.member(G.state, G.me), u = me.usual || L.BLANK, i = +d.i;
+      push({ t: 'member', id: G.me, usual: u.slice(0, i) + L.next(u[i], false) + u.slice(i + 1) });
+      render(); renderSheet();
+      const el = sheetRoot.querySelector(`.cell[data-i="${i}"]`); if (el) el.focus({ preventScroll: true });
+    },
+    remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
+    leave() {
+      if (!sure('leave')) return renderSheet();
+      const g = G;
+      g.left = true;
+      fetch(`/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: [...g.queue, { t: 'member', id: g.me, removed: true }] }) }).catch(() => {});
+      forget(g.id);
+      go('/');
+    },
+    claim(d) { G.me = d.id; remember(G); render(); },
+    retry() { G.failed = false; render(); sync(); },
+    jump(d) { const el = document.getElementById('wk-' + d.w); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  };
+
+  const forms = {
+    create(f) {
+      const name = clean(f.group.value, 40), mine = clean(f.me.value, 24);
+      if (!name || !mine) return;
+      const id = rid(), me = rid();
+      ls.set('muster.name', mine);
+      const g = { id, me, state: { group: { id, name, version: 0 }, members: [], marks: {}, plans: [] }, queue: [] };
+      [{ t: 'group', name }, { t: 'member', id: me, name: mine }].forEach(op => { L.applyOp(g.state, op); g.queue.push(op); });
+      persist(g); remember(g);
+      go('/g/' + id);
+    },
+    join(f) {
+      const mine = clean(f.me.value, 24);
+      if (!mine) return;
+      ls.set('muster.name', mine);
+      const twin = G.state.members.find(m => m.name.toLowerCase() === mine.toLowerCase());
+      if (twin && ui.dup !== mine.toLowerCase()) { ui.dup = mine.toLowerCase(); ui.dupName = twin.name; return render(); }
+      G.me = rid();
+      push({ t: 'member', id: G.me, name: mine });
+      remember(G); render();
+    },
+    'rename-me'(f) {
+      const name = clean(f.name.value, 24);
+      if (name && name !== L.member(G.state, G.me).name) { push({ t: 'member', id: G.me, name }); ls.set('muster.name', name); render(); }
+      f.name.blur(); toast('Saved');
+    },
+    'rename-group'(f) {
+      const name = clean(f.name.value, 40);
+      if (name && name !== G.state.group.name) { push({ t: 'group', name }); remember(G); render(); }
+      f.name.blur(); toast('Saved');
+    },
+    call(f) {
+      const text = clean(f.text.value, 80), sh = ui.sheet;
+      if (!text || sh.i == null) return;
+      const id = rid();
+      push({ t: 'plan', id, w: sh.w, i: sh.i, text, by: G.me }, { t: 'rsvp', p: id, m: G.me, v: 'in' });
+      closeSheet(); render();
+    },
+  };
+
+  document.addEventListener('click', e => {
+    const nav = e.target.closest('a[data-nav]');
+    if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); return go(nav.getAttribute('href')); }
+    const el = e.target.closest('[data-act]');
+    if (!el || el.disabled) return;
+    const act = acts[el.dataset.act];
+    if (act) act(el.dataset);
+  });
+  document.addEventListener('submit', e => {
+    const f = e.target.closest('form[data-form]');
+    if (!f) return;
+    e.preventDefault();
+    forms[f.dataset.form](f.elements);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+
+  route();
+})();
+</script>
+</body>
+</html>
