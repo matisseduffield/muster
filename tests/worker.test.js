@@ -122,6 +122,8 @@ test('plans: called, answered, scrapped', async () => {
   assert.deepEqual({ ...r.body.plans[0], at: 0 }, { id: P, w: W, i: 2, text: 'Pub at 7', by: ME, at: 0, rsvp: { [ME]: 'in', [YOU]: 'out' } });
   r = await post([{ t: 'rsvp', p: P, m: YOU, v: '' }, { t: 'rsvp', p: P, m: ME, v: 'sure' }]);
   assert.deepEqual(r.body.plans[0].rsvp, { [ME]: 'in' });
+  r = await post([{ t: 'rsvp', p: P, m: YOU, v: 'maybe' }]);
+  assert.deepEqual(r.body.plans[0].rsvp, { [ME]: 'in', [YOU]: 'maybe' });
   r = await post([{ t: 'plan', id: P, deleted: true }, { t: 'rsvp', p: P, m: YOU, v: 'in' }]);
   assert.deepEqual(r.body.plans, []);
 });

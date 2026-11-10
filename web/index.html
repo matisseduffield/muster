@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-AU">
 <head>
 <meta charset="utf-8">
 <!-- A group link is /g/<id>, but the files sit at the top: without this, lib.js and the fonts would be looked for under /g/. -->
@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#ECE7DB" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#10141C" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#E8ECE5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -20,8 +20,6 @@
 <meta property="og:title" content="Muster">
 <meta property="og:description" content="Mark when you are free this weekend, and see when everyone else is.">
 <meta property="og:site_name" content="Muster">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Muster">
 <title>Muster</title>
 <style>
 /* Hanken Grotesk ships with the page (fonts/, SIL OFL). */
@@ -40,43 +38,35 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Paper and ink. Days are light cells, nights are dark ones, and marigold
-   means it's on: everyone's free, the best bet, or a plan's been called. */
+/* The family's paper and ink: sage-grey paper, near-black for what you press,
+   blue for links. Green only ever means the whole group is free. */
 :root {
-  --bg: #ECE7DB;
-  --card: #F6F2E8;
-  --ink: #1A1F2B;
-  --muted: #64635C;
-  --line: #D3CCBB;
-  --day: #FBF8F0;
-  --day-ink: #1A1F2B;
-  --day-line: #D3CCBB;
-  --night: #1C2333;
-  --night-ink: #EDE8DA;
-  --night-line: #1C2333;
-  --accent: #F2B01E;
-  --bet: #1C2333;
-  --on-accent: #1A1F2B;
-  --on-ink: #F6F2E8;
-  --backdrop: rgba(16, 20, 28, .45);
+  --bg: #E8ECE5;
+  --surface: #F7F8F4;
+  --ink: #14211C;
+  --muted: #5B6861;
+  --line: #CDD5CC;
+  --line-strong: #8C968F;
+  --accent: #2C53C4;
+  --pos: #1D7548;
+  --neg: #B0392D;
+  --on-ink: #F7F8F4;
+  --backdrop: rgba(10, 16, 14, .4);
   --font: "Hanken Grotesk", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #10141C;
-    --card: #181D28;
-    --ink: #ECE7DB;
-    --muted: #A09E94;
-    --line: #2C3344;
-    --day: #36415A;
-    --day-ink: #F5F1E6;
-    --day-line: #36415A;
-    --night: #06080D;
-    --night-ink: #D6D1C3;
-    --night-line: #262D3C;
-    --bet: #262F44;
-    --on-ink: #10141C;
+    --bg: #0E1412;
+    --surface: #18211E;
+    --ink: #E4EAE5;
+    --muted: #8C9992;
+    --line: #2E3A35;
+    --line-strong: #5F6C66;
+    --accent: #85A2FF;
+    --pos: #5FC890;
+    --neg: #F08476;
+    --on-ink: #0E1412;
     --backdrop: rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
@@ -84,201 +74,146 @@
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; }
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.4 var(--font);
+  font: 400 15px/1.5 var(--font);
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
-button, input { font: inherit; color: inherit; }
-button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
 h1, h2, h3, p { margin: 0; }
 a { color: inherit; }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-#app {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: calc(18px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-left)) calc(56px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+#app { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.muted { color: var(--muted); }
+
+/* Top bar */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; margin-bottom: -6px; }
+.top-left { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.top-right { display: flex; align-items: center; gap: 14px; flex: none; }
+.mark { font-size: 1.2rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.icon-btn {
+  flex: none; display: grid; place-items: center;
+  width: 44px; height: 44px; margin: 0 -8px;
+  background: none; border: 0; border-radius: 50%; color: var(--muted);
 }
+.icon-btn:hover { color: var(--ink); }
+.top-left .icon-btn { margin-left: -12px; }
+.status { margin: -14px 0 -6px; font-size: .84rem; color: var(--muted); }
 
-/* The marks: one per person. Free is a full dot, maybe half of one, busy a dash. */
-.mk { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; vertical-align: middle; }
-.mk.f { background: currentColor; }
-.mk.m { background: linear-gradient(90deg, currentColor 50%, transparent 50%); box-shadow: inset 0 0 0 1.5px currentColor; }
-.mk.b { height: 2px; border-radius: 1px; background: currentColor; opacity: .6; }
-.mk.n { width: 3px; height: 3px; margin: 0 2.5px; background: currentColor; opacity: .32; }
-.mk.u { opacity: .5; }
-
+/* Buttons */
 .btn {
-  appearance: none; border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-ink);
-  border-radius: 9px; min-height: 44px; padding: 0 16px; font-weight: 600;
+  appearance: none; display: inline-flex; align-items: center; justify-content: center;
+  min-height: 46px; padding: 0 18px; border-radius: 6px;
+  font-size: .95rem; font-weight: 600; text-decoration: none;
+  background: var(--ink); border: 1px solid var(--ink); color: var(--on-ink);
 }
-.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-.btn.sm { min-height: 36px; padding: 0 12px; font-size: 14px; }
+.btn.ghost { background: transparent; border-color: var(--line-strong); color: var(--ink); }
 .btn.wide { width: 100%; }
-.text-btn { appearance: none; border: 0; background: none; padding: 8px 0; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
-.text-btn.quiet { font-weight: 400; color: var(--muted); }
+.link { position: relative; appearance: none; padding: 6px 0; background: none; border: 0; font-size: .88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+/* Text buttons stay small on screen but take a full-size tap */
+.link::after { content: ""; position: absolute; inset: -9px -6px; }
+.link.quiet { color: var(--muted); font-weight: 500; }
+.link.danger { color: var(--neg); }
 
-/* Top of a group */
-.top { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
-.top-name { flex: 1; min-width: 0; }
-.word { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--muted); padding: 4px 0; }
-.word .mk { width: 6px; height: 6px; }
-.word .mk.b { height: 2px; }
-.top h1 { font-size: 26px; line-height: 1.12; font-weight: 600; letter-spacing: -.015em; overflow-wrap: anywhere; }
-.icon-btn { appearance: none; border: 1.5px solid var(--line); background: transparent; border-radius: 9px; width: 44px; height: 44px; display: grid; place-items: center; flex: none; }
+/* Sections and cards */
+.section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 2px; }
+.sec-head h2 { font-size: .95rem; font-weight: 600; }
+.sec-head .muted { font-size: .88rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.empty { padding: 2px 2px 0; font-size: .9rem; color: var(--muted); }
 
-.notice { font-size: 14px; color: var(--muted); margin: -6px 0 12px; }
-
-/* Best bet */
-.bet {
-  display: block; width: 100%; text-align: left; appearance: none; border: 0;
-  background: var(--bet); color: #EDE8DA; border-radius: 12px; padding: 14px 16px 15px; margin-bottom: 10px;
+/* Three answers side by side: the one you gave is filled in */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+.seg button {
+  appearance: none; min-height: 44px; padding: 0 4px; border: 0; border-left: 1px solid var(--line);
+  background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap;
 }
-.bet-tag { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: var(--accent); }
-.bet-when { font-size: 23px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; margin-top: 2px; }
-.bet-who { font-size: 14.5px; opacity: .82; margin-top: 3px; overflow-wrap: anywhere; }
-.bet-next { font-size: 13.5px; opacity: .62; margin-top: 8px; }
-.bet.plain { background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); cursor: default; }
-.bet.plain .bet-who { opacity: 1; color: var(--muted); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
+.seg button:focus-visible { outline-offset: -3px; }
+.seg small { font-size: .8rem; font-weight: 400; margin-left: 5px; opacity: .8; }
 
-.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; font-size: 13px; color: var(--muted); margin: 0 2px 22px; }
-.legend span { display: inline-flex; align-items: center; gap: 6px; }
+/* A weekend: one row for each night and day */
+.slot { display: grid; grid-template-columns: minmax(0, 1fr) 174px; align-items: center; gap: 0 10px; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
+.slot:first-child { border-top: 0; }
+.slot-info { appearance: none; display: grid; gap: 0; min-height: 44px; padding: 0 0 0 14px; background: none; border: 0; text-align: left; align-content: center; }
+.slot-name { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+.slot-name svg { color: var(--muted); transition: transform .15s; }
+.slot-info[aria-expanded="true"] .slot-name svg { transform: rotate(180deg); }
+.slot-n { font-size: .84rem; color: var(--muted); }
+.slot-n b { font-weight: 600; color: var(--ink); }
+.slot-n.all { color: var(--pos); font-weight: 600; }
+.who { grid-column: 1 / -1; display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 3px 8px; margin: 0; padding: 6px 4px 6px 14px; font-size: .86rem; }
+.who dt { color: var(--muted); }
+.who dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 150px; } }
 
-/* A weekend: Friday, Saturday, Sunday across; day above, night below. */
-.wk { margin-bottom: 26px; scroll-margin-top: 14px; }
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; gap: 6px; }
-.date { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 0 2px 6px; min-width: 0; }
-.date-rel { font-size: 13px; font-weight: 600; color: var(--muted); }
-.date-days { font-size: 30px; font-weight: 600; letter-spacing: -.02em; line-height: 1.05; white-space: nowrap; }
-.date-month { font-size: 15px; font-weight: 600; }
-.p0 { grid-column: 1; grid-row: 2; }
-.p1 { grid-column: 2; grid-row: 1; }
-.p2 { grid-column: 2; grid-row: 2; }
-.p3 { grid-column: 3; grid-row: 1; }
-.p4 { grid-column: 3; grid-row: 2; }
-
-.cell {
-  appearance: none; border: 1px solid var(--c-line); background: var(--c-bg); color: var(--c-ink);
-  border-radius: 10px; padding: 9px 9px 9px; min-height: 118px; min-width: 0;
-  display: flex; flex-direction: column; gap: 5px; text-align: left;
-}
-.cell.day { --c-bg: var(--day); --c-ink: var(--day-ink); --c-line: var(--day-line); }
-.cell.night { --c-bg: var(--night); --c-ink: var(--night-ink); --c-line: var(--night-line); }
-.cell.all { --c-bg: var(--accent); --c-ink: var(--on-accent); --c-line: var(--accent); }
-.cell.best { outline: 2.5px solid var(--accent); outline-offset: 1.5px; }
-.cell.called { box-shadow: inset 0 4px 0 var(--accent); }
-.cell.all.called { box-shadow: inset 0 4px 0 var(--on-accent); }
-.cell.past { opacity: .36; cursor: default; }
-.cell:focus-visible { outline: 2.5px solid var(--ink); outline-offset: 2px; }
-.c-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
-.c-top svg { opacity: .75; }
-.c-n { display: flex; align-items: baseline; gap: 5px; font-size: 13px; }
-.c-n b { font-size: 27px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
-.c-n span { opacity: .72; }
-.c-roll { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 8px; }
-.c-me {
-  margin-top: auto; align-self: stretch; text-align: center; font-size: 12.5px; font-weight: 600; line-height: 1.15;
-  border: 1.5px solid transparent; border-radius: 6px; padding: 5px 4px;
-}
-.c-roll + .c-me { margin-top: auto; }
-.c-me.f { background: var(--c-ink); color: var(--c-bg); }
-.c-me.m { border-color: var(--c-ink); }
-.c-me.b { opacity: .62; text-decoration: line-through; text-decoration-thickness: 1px; }
-.c-me.n { border: 1.5px dashed color-mix(in srgb, var(--c-ink) 50%, transparent); font-weight: 400; }
-.c-me.u.f { background: color-mix(in srgb, var(--c-ink) 62%, var(--c-bg)); }
-.c-me.u.m { border-color: color-mix(in srgb, var(--c-ink) 55%, transparent); }
-
-/* Plans that have been called */
-.plan { background: var(--accent); color: var(--on-accent); border-radius: 10px; padding: 11px 12px 10px; margin-top: 6px; }
-.plan-when { font-size: 13px; font-weight: 600; opacity: .8; }
-.plan-text { font-size: 18px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
-.plan-who { font-size: 13.5px; margin-top: 3px; opacity: .85; }
-.plan-acts { display: flex; align-items: center; gap: 6px; margin-top: 9px; }
-.plan .btn { border-color: var(--on-accent); background: transparent; color: var(--on-accent); min-width: 58px; }
-.plan .btn.on { background: var(--on-accent); color: var(--accent); }
-.plan .text-btn { margin-left: auto; font-size: 13.5px; font-weight: 400; color: var(--on-accent); }
-
-.under { display: flex; align-items: center; gap: 12px; margin-top: 4px; min-height: 40px; padding: 0 2px; }
-.under-text { flex: 1; min-width: 0; font-size: 14px; color: var(--muted); }
-.under .text-btn { font-size: 14px; flex: none; }
-
-/* The roll: everyone by name, slot by slot */
-.roll { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px 12px 6px; margin-top: 2px; }
-.r-row { display: grid; grid-template-columns: minmax(0, 1fr) repeat(5, 38px); align-items: center; min-height: 34px; border-top: 1px solid var(--line); }
-.r-row > span { display: grid; place-items: center; }
-.r-row > .r-name { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
-.r-row.me .r-name { font-weight: 600; }
-.r-head { border-top: 0; min-height: 40px; font-size: 12px; font-weight: 600; color: var(--muted); }
-.r-head > span { gap: 1px; line-height: 1.1; }
-.r-row .mk { width: 11px; height: 11px; }
-.r-row .mk.b { height: 2.5px; width: 11px; }
-.r-row .mk.n { width: 4px; height: 4px; margin: 0; }
-.r-row .gone { opacity: .3; }
-.fills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* Events */
+.events { display: grid; gap: 8px; }
+.ev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 12px; }
+.ev-when { font-size: .84rem; color: var(--muted); }
+.ev-title { font-size: 1.05rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.ev-who { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
+.ev-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: -4px; font-size: .84rem; color: var(--muted); }
 
 /* Sheets */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 600px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
-  background: var(--bg); border-radius: 16px 16px 0 0; padding: 18px max(16px, env(safe-area-inset-left)) calc(22px + env(safe-area-inset-bottom));
-  outline: 0;
+  background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; outline: 0;
 }
-.sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.sheet h2 { font-size: 20px; font-weight: 600; }
-.sheet h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin: 22px 0 8px; }
-.sheet h3:first-of-type { margin-top: 4px; }
-.hint { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 6px 20px; border-bottom: 1px solid var(--line); }
+.sheet-head h2 { font-size: 1rem; font-weight: 600; }
+.sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 18px max(20px, env(safe-area-inset-left, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); }
+@media (max-width: 480px) { .sheet-head { padding: 6px 16px; } .sheet-body { padding-left: 16px; padding-right: 16px; } }
+.sheet form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.hint { font-size: .86rem; color: var(--muted); }
 
-.field { display: block; margin-bottom: 12px; }
-.field > span { display: block; font-size: 14px; font-weight: 600; margin-bottom: 5px; }
-input[type=text] {
-  width: 100%; min-height: 46px; padding: 0 12px; background: var(--day); color: var(--day-ink);
-  border: 1.5px solid var(--line); border-radius: 9px; font-size: 16px;
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
+.field-label { font-size: .8rem; font-weight: 500; color: var(--muted); }
+input[type=text], select {
+  width: 100%; min-height: 46px; padding: 0 12px; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: 6px; font-size: 16px;
 }
-input[type=text]:focus { outline: 0; border-color: var(--ink); }
-input::placeholder { color: var(--muted); opacity: .75; }
-.row { display: flex; gap: 8px; }
-.row input { flex: 1; min-width: 0; }
-
-.slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin-bottom: 12px; }
-.slot { appearance: none; border: 1.5px solid var(--line); background: transparent; border-radius: 9px; min-height: 54px; padding: 4px 2px; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-.slot.on { background: var(--ink); border-color: var(--ink); color: var(--on-ink); }
-.slot:disabled { opacity: .3; cursor: default; }
-
-.usual { max-width: 330px; }
-.usual .cell { min-height: 66px; }
-.usual .date { font-size: 13px; color: var(--muted); padding-bottom: 4px; }
+input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+input::placeholder { color: var(--muted); opacity: .8; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.seg.five button { min-height: 52px; line-height: 1.2; white-space: normal; }
+.seg.five button:disabled { opacity: .35; cursor: default; }
 
 .people { border-top: 1px solid var(--line); }
-.person { display: flex; align-items: center; min-height: 46px; border-bottom: 1px solid var(--line); }
-.person span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.person em { font-style: normal; color: var(--muted); font-size: 14px; }
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid var(--line); }
+.person span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.person em { font-style: normal; color: var(--muted); font-size: .86rem; }
+.foot-links { display: flex; flex-wrap: wrap; gap: 6px 22px; }
 
 /* Home and joining */
-.home-head { margin: 22px 0 26px; }
-.home-head .big { display: flex; align-items: center; gap: 12px; font-size: 44px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
-.home-head .big i { color: var(--ink); }
-.home-head .big .mk { width: 13px; height: 13px; }
-.home-head .big .mk.b { height: 3px; }
-.home-head .big .mk.f { color: var(--accent); }
-.home-head p { font-size: 18px; margin-top: 12px; max-width: 26em; }
-.groups { margin-bottom: 28px; border-top: 1px solid var(--line); }
-.groups a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 18px; font-weight: 600; }
-.groups a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sub { font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
-.fine { font-size: 13.5px; color: var(--muted); margin-top: 14px; }
-.names { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-.lone { margin-top: 18vh; }
-.lone h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
-.lone p { color: var(--muted); margin-bottom: 16px; }
+.lead { max-width: 21ch; font-size: 1.55rem; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.lead + p { margin-top: 10px; color: var(--muted); max-width: 34ch; }
+.rows { border-top: 1px solid var(--line); }
+.rows a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 2px; border-bottom: 1px solid var(--line); text-decoration: none; font-weight: 500; color: var(--ink); }
+.rows a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rows a svg { color: var(--muted); flex: none; }
+form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.names { display: flex; flex-wrap: wrap; gap: 8px; }
+.lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
+.lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
+.lone p { color: var(--muted); }
 
 #toast {
-  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
-  background: var(--ink); color: var(--on-ink); border-radius: 9px; padding: 10px 14px; font-size: 14.5px; font-weight: 600;
-  opacity: 0; pointer-events: none; transition: opacity .15s; white-space: nowrap;
+  position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20;
+  background: var(--ink); color: var(--on-ink); border-radius: 6px; padding: 10px 14px; font-size: .9rem; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity .15s; max-width: calc(100vw - 32px);
 }
 #toast.show { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
@@ -307,17 +242,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     del(k) { try { localStorage.removeItem(k); } catch (e) {} },
   };
 
-  const SUN = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="currentColor"/><path stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M8 1v1.8M8 13.2V15M1 8h1.8M13.2 8H15M3.05 3.05l1.3 1.3M11.65 11.65l1.3 1.3M3.05 12.95l1.3-1.3M11.65 4.35l1.3-1.3"/></svg>';
-  const MOON = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.6 10.2A6.2 6.2 0 0 1 5.8 2.4a6.2 6.2 0 1 0 7.8 7.8z"/></svg>';
   const GEAR = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h9M16 6h1M3 14h1M8 14h9"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="14" r="2"/></svg>';
-  const icon = i => (L.SLOTS[i].part === 'day' ? SUN : MOON);
-  const WORD = { f: 'Free', m: 'Maybe', b: 'Busy' };
-  const mk = a => `<i class="mk ${a.v === '-' ? 'n' : a.v}${a.usual ? ' u' : ''}"></i>`;
-  const LOGO = '<i class="mk f"></i><i class="mk m"></i><i class="mk b"></i>';
+  const BACK = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
+  const DOWN = '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg>';
+  const ANSWERS = [['f', 'Free'], ['m', 'Maybe'], ['b', 'Busy']];
+  const REPLIES = [['in', 'Going'], ['maybe', 'Maybe'], ['out', 'No']];
 
   let saved = ls.get('muster.groups', []);
   let G = null;            // the open group: { id, me, state, queue, gone, failed, offline }
-  let ui = { open: {}, sheet: null, confirm: null };
+  let ui = { open: {}, more: false, sheet: null, confirm: null };
   let view = '', drawn = null;
 
   // ---- Keeping in step with the server ----
@@ -388,7 +321,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 
   function route() {
     const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
-    ui = { open: {}, sheet: null, confirm: null };
+    ui = { open: {}, more: false, sheet: null, confirm: null };
     if (!m) { G = null; }
     else {
       const id = m[1], s = saved.find(x => x.id === id), c = ls.get('muster.g.' + id, null);
@@ -428,146 +361,97 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 
   // ---- Screens ----
 
-  function home() {
-    const list = saved.length ? `<p class="sub">Your groups</p><nav class="groups">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav>` : '';
-    return `
-      <header class="home-head">
-        <div class="big">Muster ${LOGO}</div>
-        <p>Who's free this weekend, without asking the group chat.</p>
-      </header>
-      ${list}
-      <p class="sub">${saved.length ? 'Start another' : 'Start a group'}</p>
-      <form data-form="create" autocomplete="off">
-        <label class="field"><span>Group name</span><input type="text" name="group" maxlength="40" placeholder="The Usual Suspects" required enterkeyhint="next"></label>
-        <label class="field"><span>Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
-        <button class="btn wide">Start</button>
-      </form>
-      <p class="fine">No accounts. Whoever has the group's link can see it and answer, so send it to the group and nobody else.</p>`;
-  }
   const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
-  const wordmark = () => `<a class="word" href="/" data-nav aria-label="Muster, all your groups">Muster ${LOGO}</a>`;
+  const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a></header>`;
 
-  const loading = () => `${wordmark()}<div class="lone"><p>Fetching the group.</p></div>`;
-  const gone = () => `${wordmark()}<div class="lone"><h1>This link doesn't lead to a group.</h1><p>Check it's the whole link, or ask whoever sent it.</p><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="/" data-nav>Start a group</a></div>`;
-  const failed = () => `${wordmark()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
+  function home() {
+    const list = saved.length ? `<section class="section"><div class="sec-head"><h2>Your groups</h2></div><nav class="rows">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav></section>` : '';
+    return `
+      ${bar()}
+      <div><h1 class="lead">See when everyone's free this weekend.</h1><p>Each person marks their nights and days. Post an event and the group answers going, maybe or no.</p></div>
+      ${list}
+      <section class="section">
+        <div class="sec-head"><h2>${saved.length ? 'Start another group' : 'Start a group'}</h2></div>
+        <form class="stack" data-form="create" autocomplete="off">
+          <label class="field"><span class="field-label">Group name</span><input type="text" name="group" maxlength="40" placeholder="The Usual Suspects" required enterkeyhint="next"></label>
+          <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
+          <button class="btn wide">Start</button>
+        </form>
+        <p class="hint">No accounts. Anyone with the group's link can see it and answer, so only send it to the group.</p>
+      </section>`;
+  }
+
+  const loading = () => `${bar()}<div class="lone"><p>Fetching the group.</p></div>`;
+  const gone = () => `${bar()}<div class="lone"><h1>This link doesn't lead to a group.</h1><p>Check it's the whole link, or ask whoever sent it.</p><a class="btn" href="/" data-nav>Start a group</a></div>`;
+  const failed = () => `${bar()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
 
   function join() {
     const s = G.state;
-    const names = s.members.length ? `<p class="sub">Already in it? Tap your name.</p><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div>` : '';
+    const names = s.members.length ? `<section class="section"><div class="sec-head"><h2>Already in it? Tap your name.</h2></div><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div></section>` : '';
     return `
-      ${wordmark()}
-      <header class="home-head" style="margin-top:14px">
-        <div class="big" style="font-size:34px;letter-spacing:-.02em">${esc(s.group.name)}</div>
-        <p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : 'Add yourself to mark when you are free.'}</p>
-      </header>
-      <form data-form="join" autocomplete="off">
-        <label class="field"><span>Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
+      ${bar()}
+      <div><h1 class="lead">${esc(s.group.name)}</h1><p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : 'Add yourself to mark when you're free.'}</p></div>
+      <form class="stack" data-form="join" autocomplete="off">
+        <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
         ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
       </form>
-      ${names ? `<div style="margin-top:28px">${names}</div>` : ''}`;
+      ${names}`;
   }
 
-  // Me first, then everyone in the group's order.
-  const order = () => [L.member(G.state, G.me), ...G.state.members.filter(m => m.id !== G.me)];
-  const who = m => (m.id === G.me ? 'You' : m.name);
+  // A list of people by name, with you first and called "you".
+  const people = (l, max = 6) => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: m.id === G.me ? 'you' : m.name })), max));
+  const openSlots = (w, now = new Date()) => L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
 
   function board() {
-    const s = G.state, now = new Date(), weekList = L.weeks(now, WEEKS);
-    const bets = L.best(s, weekList, now), top = bets[0];
+    const s = G.state, now = new Date();
+    const weekList = L.weeks(now, WEEKS).slice(0, ui.more ? WEEKS : 4);
+    const events = s.plans.filter(p => !L.isPast(p.w, p.i, now)).sort((a, b) => (a.w < b.w ? -1 : a.w > b.w ? 1 : a.i - b.i));
     return `
       <header class="top">
-        <div class="top-name">${wordmark()}<h1>${esc(s.group.name)}</h1></div>
-        <button class="btn" data-act="invite">Invite</button>
-        <button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button>
+        <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><h1 class="mark">${esc(s.group.name)}</h1></div>
+        <div class="top-right"><button class="link" data-act="invite">Invite</button><button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button></div>
       </header>
-      ${G.offline ? `<p class="notice">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
-      ${bet(s, bets, now)}
-      <p class="legend"><span><i class="mk f"></i>free</span><span><i class="mk m"></i>maybe</span><span><i class="mk b"></i>busy</span><span><i class="mk n"></i>no answer</span><span>Tap a slot to answer.</span></p>
-      ${weekList.map(w => week(w, now, top)).join('')}`;
+      ${G.offline ? `<p class="status">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
+      ${s.members.length < 2 ? `<p class="status">Just you so far. Tap Invite to send the group its link.</p>` : ''}
+      <section class="section">
+        <div class="sec-head"><h2>Events</h2><button class="link" data-act="event">New event</button></div>
+        ${events.length ? `<div class="events">${events.map(event).join('')}</div>` : `<p class="empty">No events yet.</p>`}
+      </section>
+      ${weekList.map(w => week(w, now)).join('')}
+      ${ui.more ? '' : `<div><button class="link" data-act="more">Show later weekends</button></div>`}`;
   }
 
-  function bet(s, bets, now) {
-    if (s.members.length < 2) return `<div class="bet plain"><div class="bet-when">Just you so far.</div><div class="bet-who">Send the link, then mark when you are free.</div></div>`;
-    if (!bets.length) return `<div class="bet plain"><div class="bet-when">Nothing lines up yet.</div><div class="bet-who">No slot has two people free.</div></div>`;
-    const b = bets[0], r = L.roll(s, b.week, b.i);
-    const plan = s.plans.find(p => p.w === b.week && p.i === b.i);
-    let line = b.all ? "Everyone's free." : `${b.f} of ${b.n} free.`;
-    if (r.m.length) line += ` ${esc(L.names(r.m))} ${r.m.length === 1 ? 'is a maybe' : 'are maybes'}.`;
-    const second = bets.find(x => x !== b && !(x.week === b.week && x.i === b.i));
-    return `<button class="bet" data-act="jump" data-w="${b.week}">
-      <span class="bet-tag">Best bet</span>
-      <div class="bet-when">${L.slotWhen(b.week, b.i)}</div>
-      <div class="bet-who">${line}${plan ? ` Called: ${esc(plan.text)}` : ''}</div>
-      ${second ? `<div class="bet-next">Then ${L.slotWhen(second.week, second.i)}, ${second.all ? 'everyone' : second.f} free.</div>` : ''}
-    </button>`;
-  }
-
-  function week(w, now, top) {
-    const s = G.state, n = s.members.length, people = order(), parts = L.rangeParts(w);
-    const cells = L.SLOTS.map((sl, i) => {
-      const past = L.isPast(w, i, now), r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i);
-      const all = n > 1 && r.f.length === n && !past;
-      const cls = ['cell', sl.part, 'p' + i, all && 'all', top && top.week === w && top.i === i && 'best', past && 'past', s.plans.some(p => p.w === w && p.i === i) && 'called'].filter(Boolean).join(' ');
-      const word = mine.v === '-' ? (past ? 'No answer' : 'Answer') : mine.usual ? `Usually ${WORD[mine.v].toLowerCase()}` : WORD[mine.v];
-      const label = `${L.slotWhen(w, i)}. ${r.f.length} of ${n} free. You: ${mine.v === '-' ? 'no answer' : word.toLowerCase()}.`;
-      return `<button class="${cls}" data-act="cell" data-w="${w}" data-i="${i}" aria-label="${label}"${past ? ' disabled' : ''}>
-        <span class="c-top"><span>${sl.day}</span>${icon(i)}</span>
-        <span class="c-n"><b>${r.f.length}</b><span>free</span></span>
-        <span class="c-roll">${people.map(m => mk(L.answer(s, m.id, w, i))).join('')}</span>
-        <span class="c-me ${mine.v === '-' ? 'n' : mine.v}${mine.usual ? ' u' : ''}">${word}</span>
-      </button>`;
+  function week(w, now) {
+    const s = G.state, n = s.members.length;
+    const rows = openSlots(w, now).map(i => {
+      const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i];
+      const all = n > 1 && r.f.length === n;
+      const count = all ? `<span class="slot-n all">Everyone's free</span>`
+        : `<span class="slot-n"><b>${r.f.length}</b> of ${n} free${r.m.length ? `, ${r.m.length} maybe` : ''}</span>`;
+      const who = open ? `<dl class="who">${[['Free', r.f], ['Maybe', r.m], ['Busy', r.b], ['No answer', r['-']]].filter(x => x[1].length).map(x => `<dt>${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl>` : '';
+      return `<div class="slot">
+        <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}</span>${count}</button>
+        <div class="seg" role="group" aria-label="${L.slotWhen(w, i)}, your answer">${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
+        ${who}
+      </div>`;
     }).join('');
-
-    const plans = s.plans.filter(p => p.w === w).sort((a, b) => a.i - b.i).map(plan).join('');
-    const wait = L.waiting(s, w, now);
-    const me = wait.some(m => m.id === G.me), others = wait.filter(m => m.id !== G.me);
-    const waitText = !wait.length ? (n > 1 ? "Everyone's answered." : '')
-      : me && !others.length ? "You haven't answered."
-      : `Waiting on ${me ? 'you' + (others.length > 1 ? ', ' : ' and ') : ''}${esc(L.names(others, me ? 2 : 3))}.`;
-    const open = !!ui.open[w];
-    return `<section class="wk" id="wk-${w}">
-      <div class="grid">
-        <div class="date"><span class="date-rel">${L.relLabel(w, now)}</span><span class="date-days">${parts.days}</span><span class="date-month">${parts.month}</span></div>
-        ${cells}
-      </div>
-      ${plans}
-      <div class="under"><span class="under-text">${waitText}</span><button class="text-btn" data-act="roll" data-w="${w}" aria-expanded="${open}">${open ? 'Hide names' : 'Names'}</button></div>
-      ${open ? roll(w, now, people) : ''}
+    return `<section class="section">
+      <div class="sec-head"><h2>${L.relLabel(w, now)}</h2><span class="muted">${L.rangeLabel(w)}</span></div>
+      <div class="card">${rows}</div>
     </section>`;
   }
 
-  function roll(w, now, people) {
-    const s = G.state;
-    const left = L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
-    const late = L.waiting(s, w, now).filter(m => m.id !== G.me);
-    const head = `<div class="r-row r-head"><span></span>${L.SLOTS.map((sl, i) => `<span>${sl.day}${icon(i)}</span>`).join('')}</div>`;
-    const rows = people.map(m => `<div class="r-row${m.id === G.me ? ' me' : ''}"><span class="r-name">${esc(who(m))}</span>${L.SLOTS.map((_, i) => `<span${left.includes(i) ? '' : ' class="gone"'}>${mk(L.answer(s, m.id, w, i))}</span>`).join('')}</div>`).join('');
-    const fills = left.length ? `<div class="fills">
-        <button class="btn ghost sm" data-act="fill" data-w="${w}" data-v="f">I'm free all weekend</button>
-        <button class="btn ghost sm" data-act="fill" data-w="${w}" data-v="b">I'm away</button>
-        <button class="btn sm" data-act="call" data-w="${w}">Call a plan</button>
-        ${late.length ? `<button class="btn ghost sm" data-act="nudge" data-w="${w}">Nudge ${late.length > 2 ? late.length + ' people' : esc(L.names(late))}</button>` : ''}
-      </div>` : '';
-    return `<div class="roll">${head}${rows}</div>${fills}`;
-  }
-
-  function plan(p) {
-    const s = G.state, by = L.member(s, p.by);
-    const ins = s.members.filter(m => p.rsvp[m.id] === 'in'), outs = s.members.filter(m => p.rsvp[m.id] === 'out');
-    const mine = p.rsvp[G.me] || '';
-    const list = l => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: m.id === G.me ? 'you' : m.name })), 4));
-    const whoLine = [by ? `${esc(who(by))} called it.` : '', ins.length ? `In: ${list(ins)}.` : 'Nobody in yet.', outs.length ? `Out: ${list(outs)}.` : ''].filter(Boolean).join(' ');
+  function event(p) {
+    const s = G.state, by = L.member(s, p.by), mine = p.rsvp[G.me] || '';
+    const groups = REPLIES.map(r => [r[0], r[1], s.members.filter(m => p.rsvp[m.id] === r[0])]);
+    const whoLine = groups.filter(g => g[2].length).map(g => `${g[1]}: ${people(g[2])}.`).join(' ') || 'No answers yet.';
     const sure = ui.confirm === 'scrap:' + p.id;
-    return `<div class="plan">
-      <div class="plan-when">${L.slotWhen(p.w, p.i)}</div>
-      <div class="plan-text">${esc(p.text)}</div>
-      <div class="plan-who">${whoLine}</div>
-      <div class="plan-acts">
-        <button class="btn sm${mine === 'in' ? ' on' : ''}" data-act="rsvp" data-p="${p.id}" data-v="in" aria-pressed="${mine === 'in'}">In</button>
-        <button class="btn sm${mine === 'out' ? ' on' : ''}" data-act="rsvp" data-p="${p.id}" data-v="out" aria-pressed="${mine === 'out'}">Out</button>
-        ${p.by === G.me || !by ? `<button class="text-btn" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to scrap' : 'Scrap'}</button>` : ''}
-      </div>
+    return `<div class="card ev">
+      <div><div class="ev-when">${L.slotWhen(p.w, p.i)}</div><div class="ev-title">${esc(p.text)}</div></div>
+      <div class="seg" role="group" aria-label="Your answer">${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
+      <div class="ev-who">${whoLine}</div>
+      <div class="ev-foot"><span>${by ? `Posted by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</span>${p.by === G.me || !by ? `<button class="link quiet" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to delete' : 'Delete'}</button>` : ''}</div>
     </div>`;
   }
 
@@ -582,7 +466,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     const typed = {}, at = document.activeElement;
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
-    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" tabindex="-1">${sh.kind === 'call' ? callSheet(sh) : settingsSheet()}</div>`;
+    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${sh.kind === 'event' ? eventSheet(sh) : settingsSheet()}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -597,48 +481,35 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     if (!(history.state && history.state.sheet)) history.pushState({ sheet: 1 }, '');
   }
   function closeSheet() { ui.sheet = null; ui.confirm = null; renderSheet(); if (history.state && history.state.sheet) history.back(); }
-  const sheetHead = t => `<div class="sheet-head"><h2>${t}</h2><button class="text-btn" data-act="close">Done</button></div>`;
+  const sheetHead = (t, shut = 'Done') => `<div class="sheet-head"><h2 id="sheet-title">${t}</h2><button class="link" data-act="close">${shut}</button></div>`;
 
-  function callSheet(sh) {
-    const now = new Date();
-    return `${sheetHead('Call a plan')}
-      <p class="hint" style="margin:-6px 0 12px">${L.relLabel(sh.w, now)}, ${L.rangeLabel(sh.w)}</p>
-      <div class="slots">${L.SLOTS.map((sl, i) => `<button class="slot${sh.i === i ? ' on' : ''}" data-act="slot" data-i="${i}" aria-pressed="${sh.i === i}"${L.isPast(sh.w, i, now) ? ' disabled' : ''}>${sl.day}${icon(i)}</button>`).join('')}</div>
-      <form data-form="call" autocomplete="off">
-        <label class="field"><span>What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
-        <button class="btn wide">Call it</button>
-      </form>
-      <p class="hint">It goes on the weekend for everyone, with you down as in.</p>`;
+  function eventSheet(sh) {
+    const now = new Date(), open = openSlots(sh.w, now);
+    return `${sheetHead('New event', 'Cancel')}
+      <div class="sheet-body"><form data-form="event" autocomplete="off">
+        <label class="field"><span class="field-label">What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
+        <label class="field"><span class="field-label">Weekend</span><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now)}, ${L.rangeLabel(w)}</option>`).join('')}</select></label>
+        <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.i === i}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
+        <button class="btn wide">Post</button>
+        <p class="hint">Everyone in the group can answer going, maybe or no. You go down as going.</p>
+      </form></div>`;
   }
 
   function settingsSheet() {
-    const s = G.state, me = L.member(s, G.me), usual = me.usual || L.BLANK;
-    const cells = L.SLOTS.map((sl, i) => {
-      const v = usual[i];
-      return `<button class="cell ${sl.part} p${i}" data-act="usual" data-i="${i}" aria-label="${sl.full} ${sl.part}: ${v === '-' ? 'no usual' : WORD[v].toLowerCase()}">
-        <span class="c-top"><span>${sl.day}</span>${icon(i)}</span>
-        <span class="c-me ${v === '-' ? 'n' : v}">${v === '-' ? 'Not set' : WORD[v]}</span>
-      </button>`;
-    }).join('');
-    const people = s.members.map(m => {
+    const s = G.state, me = L.member(s, G.me);
+    const list = s.members.map(m => {
       const sure = ui.confirm === 'remove:' + m.id;
-      return `<div class="person"><span>${esc(m.name)}${m.id === G.me ? ' <em>you</em>' : ''}</span>${m.id === G.me ? '' : `<button class="text-btn quiet" data-act="remove" data-id="${m.id}">${sure ? 'Tap again to remove' : 'Remove'}</button>`}</div>`;
+      return `<div class="person"><span>${esc(m.name)}${m.id === G.me ? ' <em>you</em>' : ''}</span>${m.id === G.me ? '' : `<button class="link quiet" data-act="remove" data-id="${m.id}">${sure ? 'Tap again to remove' : 'Remove'}</button>`}</div>`;
     }).join('');
     return `${sheetHead('You and the group')}
-      <h3>Your name</h3>
-      <form data-form="rename-me" class="row" autocomplete="off"><input type="text" name="name" maxlength="24" value="${esc(me.name)}" required aria-label="Your name" enterkeyhint="done"><button class="btn ghost">Save</button></form>
-      <h3>Your usual weekend</h3>
-      <div class="grid usual"><div class="date">Tap to set</div>${cells}</div>
-      <p class="hint">Fills in every weekend until you answer it. Football every Saturday? Mark it busy once.</p>
-      <h3>Group name</h3>
-      <form data-form="rename-group" class="row" autocomplete="off"><input type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required aria-label="Group name" enterkeyhint="done"><button class="btn ghost">Save</button></form>
-      <h3>People</h3>
-      <div class="people">${people}</div>
-      <div style="display:flex;gap:18px;margin-top:10px">
-        <button class="text-btn quiet" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>
-        <a class="text-btn quiet" href="/" data-nav>Your other groups</a>
+      <div class="sheet-body">
+        <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
+        <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
+        <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
+        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button></div>
       </div>`;
   }
+
 
   // ---- Doing things ----
 
@@ -656,59 +527,43 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
   }
 
   // Hand a message and the group's link to the share sheet, or copy them.
-  async function send(text, whole) {
+  async function send(text) {
     const url = `${location.origin}/g/${G.id}`;
-    const copy = async () => { try { await navigator.clipboard.writeText(whole ? `${text} ${url}` : url); toast(whole ? 'Message copied' : 'Link copied'); } catch (x) { toast("Couldn't copy. The link is in the address bar."); } };
+    const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied'); } catch (x) { toast("Couldn't copy the link."); } };
     if (!navigator.share) return copy();
     try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
   }
 
   const acts = {
-    cell(d) {
-      const me = L.member(G.state, G.me), i = +d.i;
-      const cur = L.answer(G.state, G.me, d.w, i);
-      push({ t: 'mark', m: G.me, w: d.w, i, v: L.next(cur.v, (me.usual || L.BLANK)[i] !== '-') });
+    // Your answer for a slot. Tapping the one you gave takes it back.
+    mark(d) {
+      const i = +d.i, said = ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i];
+      push({ t: 'mark', m: G.me, w: d.w, i, v: said === d.v ? '-' : d.v });
       render();
-      const el = app.querySelector(`.cell[data-w="${d.w}"][data-i="${i}"]`);
-      if (el) { el.focus({ preventScroll: true }); if (el.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) el.animate([{ transform: 'scale(.955)' }, { transform: 'scale(1)' }], { duration: 150, easing: 'ease-out' }); }
+      const el = app.querySelector(`[data-act="mark"][data-w="${d.w}"][data-i="${i}"][data-v="${d.v}"]`);
+      if (el) el.focus({ preventScroll: true });
     },
-    roll(d) { ui.open[d.w] = !ui.open[d.w]; render(); const b = app.querySelector(`[data-act="roll"][data-w="${d.w}"]`); if (b) b.focus({ preventScroll: true }); },
-    fill(d) {
-      const now = new Date();
-      const ops = L.SLOTS.map((_, i) => i).filter(i => !L.isPast(d.w, i, now) && ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i] !== d.v).map(i => ({ t: 'mark', m: G.me, w: d.w, i, v: d.v }));
-      if (ops.length) push(...ops);
-      render();
+    who(d) {
+      const k = d.w + ':' + d.i;
+      ui.open[k] = !ui.open[k]; render();
+      const el = app.querySelector(`[data-act="who"][data-w="${d.w}"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true });
     },
-    call(d) {
-      const now = new Date(), b = L.best(G.state, [d.w], now)[0];
-      const first = L.SLOTS.map((_, i) => i).find(i => !L.isPast(d.w, i, now));
-      openSheet({ kind: 'call', w: d.w, i: b ? b.i : first });
+    more() { ui.more = true; render(); },
+    event() {
+      const now = new Date(), w = L.weeks(now, 1)[0];
+      openSheet({ kind: 'event', w, i: openSlots(w, now)[0] });
     },
-    slot(d) {
-      ui.sheet.i = +d.i; renderSheet();
-    },
+    slot(d) { ui.sheet.i = +d.i; renderSheet(); const el = sheetRoot.querySelector(`[data-act="slot"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true }); },
     rsvp(d) {
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
       push({ t: 'rsvp', p: d.p, m: G.me, v: p.rsvp[G.me] === d.v ? '' : d.v });
       render();
+      const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`); if (el) el.focus({ preventScroll: true });
     },
     scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
-    invite() { send(`${G.state.group.name}: mark when you're free`, false); },
-    // A ready-made message for whoever hasn't answered a weekend.
-    nudge(d) {
-      const now = new Date(), late = L.waiting(G.state, d.w, now).filter(m => m.id !== G.me);
-      if (!late.length) return;
-      const rel = L.relLabel(d.w, now);
-      send(`${L.names(late, 6)}, are you around ${rel[0].toLowerCase() + rel.slice(1)} (${L.rangeLabel(d.w)})? Mark it here:`, true);
-    },
+    invite() { send(`${G.state.group.name}: mark when you're free`); },
     settings() { openSheet({ kind: 'settings' }); },
     close() { closeSheet(); },
-    usual(d) {
-      const me = L.member(G.state, G.me), u = me.usual || L.BLANK, i = +d.i;
-      push({ t: 'member', id: G.me, usual: u.slice(0, i) + L.next(u[i], false) + u.slice(i + 1) });
-      render(); renderSheet();
-      const el = sheetRoot.querySelector(`.cell[data-i="${i}"]`); if (el) el.focus({ preventScroll: true });
-    },
     remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
     leave() {
       if (!sure('leave')) return renderSheet();
@@ -720,8 +575,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     },
     claim(d) { G.me = d.id; remember(G); render(); },
     retry() { G.failed = false; render(); sync(); },
-    jump(d) { const el = document.getElementById('wk-' + d.w); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
   };
+
 
   const forms = {
     create(f) {
@@ -746,15 +601,17 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     },
     'rename-me'(f) {
       const name = clean(f.name.value, 24);
+      if (!name) return;
       if (name && name !== L.member(G.state, G.me).name) { push({ t: 'member', id: G.me, name }); ls.set('muster.name', name); render(); }
       f.name.blur(); toast('Saved');
     },
     'rename-group'(f) {
       const name = clean(f.name.value, 40);
+      if (!name) return;
       if (name && name !== G.state.group.name) { push({ t: 'group', name }); remember(G); render(); }
       f.name.blur(); toast('Saved');
     },
-    call(f) {
+    event(f) {
       const text = clean(f.text.value, 80), sh = ui.sheet;
       if (!text || sh.i == null) return;
       const id = rid();
@@ -776,6 +633,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     if (!f) return;
     e.preventDefault();
     forms[f.dataset.form](f.elements);
+  });
+  // Picking another weekend for an event: its past slots can't be chosen.
+  document.addEventListener('change', e => {
+    if (!e.target.matches('select[name=w]') || !ui.sheet) return;
+    ui.sheet.w = e.target.value;
+    const open = openSlots(ui.sheet.w);
+    if (!open.includes(ui.sheet.i)) ui.sheet.i = open[0];
+    renderSheet();
+    const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
 

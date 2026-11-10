@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS rsvps (
   plan_id TEXT NOT NULL,
   member_id TEXT NOT NULL,
   group_id TEXT NOT NULL,
-  state TEXT NOT NULL, -- in | out
+  state TEXT NOT NULL, -- in | maybe | out
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (plan_id, member_id)
 );

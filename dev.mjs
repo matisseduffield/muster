@@ -43,11 +43,11 @@ async function seed() {
     [w2]: ['bbbbb', 'ff---', '-----', 'fmf--', '-----', 'bb-ff'],
     [w3]: ['-f---', '-----', 'ff---', '-----', '-----', '-----'],
   };
-  const ops = [{ t: 'group', name: 'The Usual Suspects' }, ...PEOPLE.map((p, k) => ({ t: 'member', ...p, usual: k === 1 ? 'f-f--' : undefined }))];
+  const ops = [{ t: 'group', name: 'The Usual Suspects' }, ...PEOPLE.map((p, k) => ({ t: 'member', ...p, usual: undefined }))];
   for (const [w, list] of Object.entries(rows)) list.forEach((s, k) => [...s].forEach((v, i) => { if (v !== '-') ops.push({ t: 'mark', m: PEOPLE[k].id, w, i, v }); }));
   const plan = 'demo-plan-00000000000a';
   ops.push({ t: 'plan', id: plan, w: w0, i: 2, text: "Pub at 7, then Tom's", by: PEOPLE[1].id });
-  ops.push({ t: 'rsvp', p: plan, m: PEOPLE[1].id, v: 'in' }, { t: 'rsvp', p: plan, m: PEOPLE[2].id, v: 'in' }, { t: 'rsvp', p: plan, m: PEOPLE[3].id, v: 'out' });
+  ops.push({ t: 'rsvp', p: plan, m: PEOPLE[1].id, v: 'in' }, { t: 'rsvp', p: plan, m: PEOPLE[2].id, v: 'in' }, { t: 'rsvp', p: plan, m: PEOPLE[3].id, v: 'out' }, { t: 'rsvp', p: plan, m: PEOPLE[4].id, v: 'maybe' });
   await worker.fetch(new Request(`http://x/api/g/${DEMO}/ops`, { method: 'POST', body: JSON.stringify({ ops }) }), env);
 }
 

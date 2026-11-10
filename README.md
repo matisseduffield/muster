@@ -5,17 +5,19 @@ Who's free this weekend. A friend group marks Friday night, Saturday and Sunday
 
 - A group has a name and a private link (https://muster.teloone.au/g/…). Anyone
   with the link opens it in a browser, types their name and answers. No accounts.
-- The next eight weekends, five slots each. No answer is kept apart from busy.
-- Best bet: the slot most of the group can make.
-- A usual weekend per person, used for weekends they haven't answered.
-- Call a plan on a slot; people say in or out.
-- Nudge: a ready-made message for whoever hasn't answered, through the share sheet.
+- Eight weekends ahead (four shown, the rest behind a link), five slots each.
+  Each slot shows how many are free and a Free / Maybe / Busy answer; tap the
+  slot for names. No answer is kept apart from busy.
+- Events: anyone posts one on a slot and the group answers Going / Maybe / No.
+- Looks like the rest of the family (Tally's paper, ink and type).
+- The rules and the server still carry a per-person "usual weekend"; nothing in
+  the app sets it now.
 - Works offline: the board lives on the device, changes queue and sync later.
 
 ## Layout
 
 - `web/index.html`: the whole app (HTML/CSS/JS, no build step).
-- `web/lib.js`: the rules (weekends, answers, best bet), tested by `node --test`.
+- `web/lib.js`: the rules (weekends, answers, counts), tested by `node --test`.
 - `web/sw.js`: opens the site with no signal. Network first, and it only touches
   the files it names: never `/api/`, and never a `/g/` address.
 - `worker/worker.js`, `worker/schema.sql`: the server, a Cloudflare Worker named

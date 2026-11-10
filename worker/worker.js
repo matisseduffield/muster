@@ -14,7 +14,7 @@
 //   { t: 'member', id, name?, usual?, removed? }
 //   { t: 'mark', m, w, i, v }                 member m, week w (its Friday), slot i 0-4, v one of f m b -
 //   { t: 'plan', id, w, i, text, by }         call a plan; { t: 'plan', id, deleted: true } scraps it
-//   { t: 'rsvp', p, m, v }                    v: in | out | '' (no answer)
+//   { t: 'rsvp', p, m, v }                    v: in | maybe | out | '' (no answer)
 // Schema in schema.sql.
 
 const WEB = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/web/';
@@ -202,7 +202,7 @@ async function applyOps(env, id, request) {
       plans.set(op.id, true);
     } else if (op.t === 'rsvp') {
       if (!plans.get(op.p) || !members.get(op.m)) continue;
-      if (op.v === 'in' || op.v === 'out') {
+      if (op.v === 'in' || op.v === 'maybe' || op.v === 'out') {
         out.push(db.prepare(
           'INSERT INTO rsvps (plan_id, member_id, group_id, state, updated_at) VALUES (?, ?, ?, ?, ?) ' +
           'ON CONFLICT(plan_id, member_id) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at WHERE group_id = excluded.group_id'
