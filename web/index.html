@@ -390,7 +390,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     const names = s.members.length ? `<section class="section"><div class="sec-head"><h2>Already in it? Tap your name.</h2></div><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div></section>` : '';
     return `
       ${bar()}
-      <div><h1 class="lead">${esc(s.group.name)}</h1><p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : 'Add yourself to mark when you're free.'}</p></div>
+      <div><h1 class="lead">${esc(s.group.name)}</h1><p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : "Add yourself to mark when you're free."}</p></div>
       <form class="stack" data-form="join" autocomplete="off">
         <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
