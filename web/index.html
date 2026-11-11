@@ -767,7 +767,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return `${sheetHead('New event', 'Cancel')}
       <div class="sheet-body"><form data-form="event" autocomplete="off">
         <label class="field"><span class="field-label">What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
-        <label class="field"><span class="field-label">Weekend</span><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now)}, ${L.rangeLabel(w)}</option>`).join('')}</select></label>
+        <label class="field"><span class="field-label">Weekend</span><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}</option>`).join('')}</select></label>
         <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.i === i}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
         <button class="btn wide">Post</button>
         <p class="hint">Everyone in the group can answer going, maybe or no. You go down as going.</p>
