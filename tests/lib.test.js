@@ -89,3 +89,25 @@ test("a weekend's dates in two pieces", () => {
   assert.deepEqual(L.rangeParts("2026-10-30"), { days: "30–1", month: "Oct / Nov" });
   assert.deepEqual(L.rangeParts("2027-12-31"), { days: "31–2", month: "Dec / Jan" });
 });
+
+test('an event over several slots', () => {
+  assert.deepEqual(L.bits(6), [1, 2]);
+  assert.equal(L.maskOf([1, 2]), 6);
+  assert.deepEqual(L.planSlots({ i: 2 }), [2]);
+  assert.deepEqual(L.planSlots({ i: 1, s: 6 }), [1, 2]);
+  assert.equal(L.slotsName([1, 2]), 'Sat day and night');
+  assert.equal(L.slotsName([2, 3]), 'Sat night and Sun day');
+  assert.equal(L.slotsName([1, 2, 3, 4]), 'Sat and Sun');
+  assert.equal(L.slotsName([0, 1, 2]), 'Fri night and Sat');
+  assert.equal(L.slotsName([2], true), 'night');
+  assert.equal(L.planWhen({ w: '2026-11-13', i: 2 }), 'Sat night, 14 Nov');
+  assert.equal(L.planWhen({ w: '2026-11-13', i: 1, s: 6 }), 'Sat day and night, 14 Nov');
+  assert.equal(L.planWhen({ w: '2026-11-13', i: 1, s: 30 }), 'Sat and Sun, 14–15 Nov');
+  const s = { group: {}, members: [], marks: {}, plans: [] };
+  L.applyOp(s, { t: 'plan', id: 'p', w: '2026-11-13', i: 1, s: 6, text: 'Beach', by: 'a' });
+  L.applyOp(s, { t: 'rsvp', p: 'p', m: 'a', v: 'in', s: 4 });
+  assert.deepEqual(L.planPart(s.plans[0], 'a'), [2]);
+  assert.deepEqual(L.planPart(s.plans[0], 'b'), [1, 2]);
+  L.applyOp(s, { t: 'rsvp', p: 'p', m: 'a', v: 'in', s: 0 });
+  assert.deepEqual(L.planPart(s.plans[0], 'a'), [1, 2]);
+});

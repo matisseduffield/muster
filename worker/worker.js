@@ -20,8 +20,9 @@
 //   { t: 'group', name }                      start the group, or rename it
 //   { t: 'member', id, name?, usual?, removed? }
 //   { t: 'mark', m, w, i, v }                 member m, week w (its Friday), slot i 0-4, v one of f m b -
-//   { t: 'plan', id, w, i, text, by }         call a plan; { t: 'plan', id, deleted: true } scraps it
-//   { t: 'rsvp', p, m, v }                    v: in | maybe | out | '' (no answer)
+//   { t: 'plan', id, w, i, text, by, s? }     call a plan; { t: 'plan', id, deleted: true } scraps it.
+//                                             s: its slots as bits when it runs over more than one
+//   { t: 'rsvp', p, m, v, s? }                v: in | maybe | out | '' (no answer). s: the slots they can make, as bits
 // Schema in schema.sql.
 
 const WEB = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/web/';
@@ -105,20 +106,27 @@ async function readGroup(env, id, now) {
     env.DB.prepare('SELECT id, name, version FROM groups WHERE id = ?').bind(id),
     env.DB.prepare('SELECT id, name, usual FROM members WHERE group_id = ? AND removed = 0 ORDER BY created_at, id').bind(id),
     env.DB.prepare('SELECT member_id, week, slots FROM marks WHERE group_id = ? AND week >= ?').bind(id, from),
-    env.DB.prepare('SELECT id, week, slot, text, by_id, created_at FROM plans WHERE group_id = ? AND deleted = 0 AND week >= ? ORDER BY created_at, id').bind(id, from),
-    env.DB.prepare('SELECT plan_id, member_id, state FROM rsvps WHERE group_id = ? AND plan_id IN (SELECT id FROM plans WHERE group_id = ? AND deleted = 0 AND week >= ?)').bind(id, id, from),
+    env.DB.prepare('SELECT id, week, slot, mask, text, by_id, created_at FROM plans WHERE group_id = ? AND deleted = 0 AND week >= ? ORDER BY created_at, id').bind(id, from),
+    env.DB.prepare('SELECT plan_id, member_id, state, part FROM rsvps WHERE group_id = ? AND plan_id IN (SELECT id FROM plans WHERE group_id = ? AND deleted = 0 AND week >= ?)').bind(id, id, from),
   ]);
   if (!g.results.length) return null;
   const here = new Set(members.results.map(m => m.id));
   const byMember = {};
   for (const r of marks.results) if (here.has(r.member_id)) (byMember[r.member_id] ||= {})[r.week] = r.slots;
   const byPlan = {};
-  for (const r of rsvps.results) if (here.has(r.member_id)) (byPlan[r.plan_id] ||= {})[r.member_id] = r.state;
+  const masks = {}, parts = {};
+  for (const p of plans.results) if (many(p.mask)) masks[p.id] = p.mask;
+  for (const r of rsvps.results) if (here.has(r.member_id)) {
+    (byPlan[r.plan_id] ||= {})[r.member_id] = r.state;
+    // Only part of a longer event: kept when it names some, not all, of the event's slots.
+    const some = r.part & (masks[r.plan_id] || 0);
+    if (some && some !== masks[r.plan_id]) (parts[r.plan_id] ||= {})[r.member_id] = some;
+  }
   return {
     group: g.results[0],
     members: members.results,
     marks: byMember,
-    plans: plans.results.map(p => ({ id: p.id, w: p.week, i: p.slot, text: p.text, by: p.by_id, at: p.created_at, rsvp: byPlan[p.id] || {} })),
+    plans: plans.results.map(p => ({ id: p.id, w: p.week, i: p.slot, text: p.text, by: p.by_id, at: p.created_at, rsvp: byPlan[p.id] || {}, ...(masks[p.id] ? { s: masks[p.id] } : {}), ...(parts[p.id] ? { part: parts[p.id] } : {}) })),
   };
 }
 
@@ -206,6 +214,9 @@ function goodWeek(w, now) {
 // Ids must be real strings: an array holding one would pass the pattern and then break the query.
 const isId = v => typeof v === 'string' && ID.test(v);
 const goodSlot = i => Number.isInteger(i) && i >= 0 && i <= 4;
+const goodMask = m => Number.isInteger(m) && m >= 1 && m <= 31;
+const many = m => goodMask(m) && (m & (m - 1)) !== 0;
+const lowest = m => Math.log2(m & -m);
 
 async function applyOps(env, id, request) {
   const raw = await request.text();
@@ -272,20 +283,22 @@ async function applyOps(env, id, request) {
         continue;
       }
       const text = cleanText(op.text, 80);
-      if (!text || !members.get(op.by) || !goodWeek(op.w, now) || !goodSlot(op.i)) continue;
+      // Over several slots, the first one is its slot, so older apps still show it.
+      const mask = many(op.s) ? op.s : 0, slot = mask ? lowest(mask) : op.i;
+      if (!text || !members.get(op.by) || !goodWeek(op.w, now) || !goodSlot(slot)) continue;
       if (!plans.has(op.id) && live(plans) >= MAX_PLANS) continue;
       out.push(db.prepare(
-        'INSERT INTO plans (id, group_id, week, slot, text, by_id, deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?) ' +
-        'ON CONFLICT(id) DO UPDATE SET week = excluded.week, slot = excluded.slot, text = excluded.text, deleted = 0, updated_at = excluded.updated_at WHERE group_id = excluded.group_id'
-      ).bind(op.id, id, op.w, op.i, text, op.by, now, now));
+        'INSERT INTO plans (id, group_id, week, slot, mask, text, by_id, deleted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?) ' +
+        'ON CONFLICT(id) DO UPDATE SET week = excluded.week, slot = excluded.slot, mask = excluded.mask, text = excluded.text, deleted = 0, updated_at = excluded.updated_at WHERE group_id = excluded.group_id'
+      ).bind(op.id, id, op.w, slot, mask, text, op.by, now, now));
       plans.set(op.id, true);
     } else if (op.t === 'rsvp') {
       if (!plans.get(op.p) || !members.get(op.m)) continue;
       if (op.v === 'in' || op.v === 'maybe' || op.v === 'out') {
         out.push(db.prepare(
-          'INSERT INTO rsvps (plan_id, member_id, group_id, state, updated_at) VALUES (?, ?, ?, ?, ?) ' +
-          'ON CONFLICT(plan_id, member_id) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at WHERE group_id = excluded.group_id'
-        ).bind(op.p, op.m, id, op.v, now));
+          'INSERT INTO rsvps (plan_id, member_id, group_id, state, part, updated_at) VALUES (?, ?, ?, ?, ?, ?) ' +
+          'ON CONFLICT(plan_id, member_id) DO UPDATE SET state = excluded.state, part = excluded.part, updated_at = excluded.updated_at WHERE group_id = excluded.group_id'
+        ).bind(op.p, op.m, id, op.v, goodMask(op.s) ? op.s : 0, now));
       } else if (op.v === '') {
         out.push(db.prepare('DELETE FROM rsvps WHERE plan_id = ? AND member_id = ? AND group_id = ?').bind(op.p, op.m, id));
       }

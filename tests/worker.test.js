@@ -147,8 +147,8 @@ test('the daily clean-up forgets weekends long past', async () => {
   await start();
   await post([{ t: 'mark', m: ME, w: W, i: 0, v: 'f' }]);
   env.DB.raw.prepare("INSERT INTO marks VALUES (?, '2020-01-03', ?, 'fffff', 0)").run(ME, G);
-  env.DB.raw.prepare("INSERT INTO plans VALUES (?, ?, '2020-01-03', 0, 'Old', ?, 0, 0, 0)").run(P, G, ME);
-  env.DB.raw.prepare("INSERT INTO rsvps VALUES (?, ?, ?, 'in', 0)").run(P, ME, G);
+  env.DB.raw.prepare("INSERT INTO plans VALUES (?, ?, '2020-01-03', 0, 'Old', ?, 0, 0, 0, 0)").run(P, G, ME);
+  env.DB.raw.prepare("INSERT INTO rsvps VALUES (?, ?, ?, 'in', 0, 0)").run(P, ME, G);
   await worker.scheduled({}, env);
   const n = t => env.DB.raw.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n;
   assert.deepEqual([n('marks'), n('plans'), n('rsvps')], [1, 0, 0]);
@@ -215,4 +215,25 @@ test('the daily clean-up drops codes and guesses that have run out', async () =>
   await worker.scheduled({}, env);
   assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM codes').get().n, 0);
   assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM guesses').get().n, 0);
+});
+
+test('an event over several slots, and who can make which part', async () => {
+  const { start, post } = await setup();
+  await start();
+  // Sat day and Sat night: its slot is the first of them, whatever the app sent.
+  let r = await post([{ t: 'plan', id: P, w: W, i: 4, s: 6, text: 'Beach then pub', by: ME }, { t: 'rsvp', p: P, m: ME, v: 'in' }, { t: 'rsvp', p: P, m: YOU, v: 'in', s: 4 }]);
+  assert.deepEqual({ ...r.body.plans[0], at: 0 }, { id: P, w: W, i: 1, text: 'Beach then pub', by: ME, at: 0, rsvp: { [ME]: 'in', [YOU]: 'in' }, s: 6, part: { [YOU]: 4 } });
+  // All of it, a slot it doesn't have, or rubbish: no part.
+  for (const s of [6, 0, 16, 99, 'x']) {
+    r = await post([{ t: 'rsvp', p: P, m: YOU, v: 'maybe', s }]);
+    assert.equal(r.body.plans[0].part, undefined);
+  }
+  // Back to one slot.
+  r = await post([{ t: 'plan', id: P, w: W, i: 2, s: 4, text: 'Pub', by: ME }]);
+  assert.equal(r.body.plans[0].s, undefined);
+  assert.equal(r.body.plans[0].i, 2);
+  // A bad set of slots falls back to the one slot.
+  r = await post([{ t: 'plan', id: P, w: W, i: 3, s: 64, text: 'Pub', by: ME }]);
+  assert.equal(r.body.plans[0].s, undefined);
+  assert.equal(r.body.plans[0].i, 3);
 });

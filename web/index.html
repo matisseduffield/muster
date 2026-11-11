@@ -112,6 +112,7 @@ a { color: inherit; }
 }
 .icon-btn:hover { color: var(--ink); }
 .top-left .icon-btn { margin-left: -12px; }
+.mark-n { flex: none; margin-left: 6px; min-width: 22px; padding: 0 6px; font-size: .78rem; font-weight: 600; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 11px; }
 .status { margin: -14px 0 -6px; font-size: .84rem; color: var(--muted); }
 
 /* Buttons */
@@ -200,6 +201,10 @@ a { color: inherit; }
 .ev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 12px; }
 .ev-when { font-size: .84rem; color: var(--muted); }
 .ev-title { font-size: 1.05rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.ev-part { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.ev-part.long { display: grid; }
+.ev-part > span { font-size: .86rem; color: var(--muted); }
+.ev-part .seg button { min-height: 34px; padding: 0 14px; font-size: .86rem; }
 .ev-who { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
 .ev-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: -4px; font-size: .84rem; color: var(--muted); }
 
@@ -638,30 +643,29 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const names = s.members.length ? `<section class="section"><div class="sec-head"><h2>Already in it? Tap your name.</h2></div><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div></section>` : '';
     return `
       ${bar()}
-      <div><h1 class="lead">${esc(s.group.name)}</h1><p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : "Add yourself to mark when you're free."}</p></div>
+      <div><h1 class="lead">${esc(s.group.name)}</h1></div>
       <form class="stack" data-form="join" autocomplete="off">
         <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"></label>
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
-        ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
+        ${ui.dup ? `<p class="hint">${esc(ui.dupName)} is already here. If that's you, tap your name below.</p>` : ''}
       </form>
       ${names}${legal() || links()}`;
   }
 
   // A list of people by name, with you first and called "you".
-  const people = (l, max = 6) => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: m.id === G.me ? 'you' : m.name })), max));
+  const people = (l, max = 6, named) => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: !named && m.id === G.me ? 'you' : m.name })), max));
   const openSlots = (w, now = new Date()) => L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
 
   function board() {
     const s = G.state, now = new Date();
     const weekList = L.weeks(now, WEEKS).slice(0, ui.more ? WEEKS : 4);
-    const events = s.plans.filter(p => !L.isPast(p.w, p.i, now)).sort((a, b) => (a.w < b.w ? -1 : a.w > b.w ? 1 : a.i - b.i));
+    const events = s.plans.filter(p => !L.isPast(p.w, L.planSlots(p).at(-1), now)).sort((a, b) => (a.w < b.w ? -1 : a.w > b.w ? 1 : a.i - b.i));
     return `
       <header class="top">
-        <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><h1 class="mark">${esc(s.group.name)}</h1></div>
+        <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><h1 class="mark">${esc(s.group.name)}</h1><span class="mark-n" aria-label="${s.members.length} ${s.members.length === 1 ? 'person' : 'people'}">${s.members.length}</span></div>
         <div class="top-right"><button class="link" data-act="invite">Invite</button><button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button></div>
       </header>
       ${G.offline ? `<p class="status">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
-      ${s.members.length < 2 ? `<p class="status">Just you so far. Tap Invite to send the group its link.</p>` : ''}
       <section class="section">
         <div class="sec-head"><h2>Events</h2><button class="link" data-act="event">New event</button></div>
         ${events.length ? `<div class="events">${events.map(event).join('')}</div>` : `<p class="empty">No events yet.</p>`}
@@ -703,21 +707,24 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function event(p) {
     const s = G.state, by = L.member(s, p.by), mine = p.rsvp[G.me] || '';
+    const all = L.planSlots(p), oneDay = new Set(all.map(i => L.SLOTS[i].day)).size === 1;
+    // Someone who can only make part of it is named with the part.
+    const some = m => { const got = L.planPart(p, m.id); return got.length < all.length ? ` (${L.slotsName(got, oneDay)} only)` : ''; };
     const groups = REPLIES.map(r => [r[0], r[1], s.members.filter(m => p.rsvp[m.id] === r[0])]);
-    const whoLine = groups.filter(g => g[2].length).map(g => `${g[1]}: ${people(g[2])}.`).join(' ') || 'No answers yet.';
+    const list = g => g[0] === 'out' ? people(g[2]) : people(g[2].map(m => ({ id: m.id, name: (m.id === G.me ? 'you' : m.name) + some(m) })), 6, true);
+    const whoLine = groups.filter(g => g[2].length).map(g => `${g[1]}: ${list(g)}.`).join(' ') || 'No answers yet.';
     const sure = ui.confirm === 'scrap:' + p.id;
+    const got = L.planPart(p, G.me);
+    const part = all.length > 1 && (mine === 'in' || mine === 'maybe') ? `<div class="ev-part${all.length > 2 ? ' long' : ''}"><span>You can make</span><div class="seg" role="group" aria-label="The parts you can make">${all.map(i => `<button data-act="part" data-p="${p.id}" data-i="${i}" aria-pressed="${got.includes(i)}">${oneDay ? L.SLOTS[i].part[0].toUpperCase() + L.SLOTS[i].part.slice(1) : L.slotName(i)}</button>`).join('')}</div></div>` : '';
     return `<div class="card ev">
-      <div><div class="ev-when">${L.slotWhen(p.w, p.i)}</div><div class="ev-title">${esc(p.text)}</div></div>
+      <div><div class="ev-when">${L.planWhen(p)}</div><div class="ev-title">${esc(p.text)}</div></div>
       <div class="slide" data-pos="${pos(REPLIES, mine)}" role="group" aria-label="Your answer"><span class="knob"></span>${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
+      ${part}
       <div class="ev-who">${whoLine}</div>
       <div class="ev-foot"><span>${by ? `Posted by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</span>${p.by === G.me || !by ? `<button class="link quiet" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to delete' : 'Delete'}</button>` : ''}</div>
     </div>`;
   }
 
-  // ---- Sheets ----
-
-  let sheetDrawn = '';
-  // quiet: only if something in it has changed.
   function renderSheet(quiet) {
     const sh = ui.sheet;
     if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
@@ -752,11 +759,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // The group's code, large enough to read out across a room.
   function inviteSheet(sh) {
     if (sh.fail) return `${sheetHead('Invite')}
-      <div class="sheet-body"><p class="hint">Can't get a code right now. Send the link instead.</p><button class="btn wide" data-act="shareLink">Share link</button></div>`;
+      <div class="sheet-body"><p class="hint">Can't get a code right now.</p><button class="btn wide" data-act="shareLink">Share link</button></div>`;
     return `${sheetHead('Invite')}
       <div class="sheet-body">
         <div ${sh.code ? `role="img" aria-label="Join code ${sh.code.split('').join(' ')}"` : 'aria-busy="true"'}>${cells(sh.code || '').replace(' class="at"', '')}</div>
-        <p class="hint">Friends tap Join a group and enter this code. It works for a week.</p>
+        <p class="hint">Works for a week.</p>
         <button class="btn wide" data-act="shareCode"${sh.code ? '' : ' disabled'}>Share code</button>
         <div class="invite-foot"><button class="link quiet" data-act="shareLink">Share the link instead</button></div>
       </div>`;
@@ -768,9 +775,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       <div class="sheet-body"><form data-form="event" autocomplete="off">
         <label class="field"><span class="field-label">What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
         <label class="field"><span class="field-label">Weekend</span><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}</option>`).join('')}</select></label>
-        <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.i === i}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
+        <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When, one or more">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.sel.includes(i)}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
         <button class="btn wide">Post</button>
-        <p class="hint">Everyone in the group can answer going, maybe or no. You go down as going.</p>
       </form></div>`;
   }
 
@@ -839,13 +845,33 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     // From the top it starts on this weekend; from a slot, on that slot.
     event(d) {
       const now = new Date(), w = d.w || L.weeks(now, 2).find(x => openSlots(x, now).length);
-      openSheet({ kind: 'event', w, i: d.i != null ? +d.i : openSlots(w, now)[0] });
+      openSheet({ kind: 'event', w, sel: [d.i != null ? +d.i : openSlots(w, now)[0]], soft: d.i == null });
     },
-    slot(d) { ui.sheet.i = +d.i; renderSheet(); const el = sheetRoot.querySelector(`[data-act="slot"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true }); },
+    // Tapping a slot adds it to the event or takes it off; one always stays.
+    slot(d) {
+      const sh = ui.sheet, i = +d.i, on = sh.sel.includes(i);
+      // The slot we guessed gives way to the first one picked.
+      if (sh.soft) { sh.soft = false; if (!on) sh.sel = []; }
+      if (on && sh.sel.length === 1) return;
+      sh.sel = on ? sh.sel.filter(x => x !== i) : [...sh.sel, i].sort((a, b) => a - b);
+      renderSheet();
+      const el = sheetRoot.querySelector(`[data-act="slot"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true });
+    },
+    // Which parts of a longer event you can make.
+    part(d) {
+      const p = G.state.plans.find(x => x.id === d.p), i = +d.i; if (!p || !p.rsvp[G.me]) return;
+      const all = L.planSlots(p), got = L.planPart(p, G.me), on = got.includes(i);
+      if (on && got.length === 1) return;
+      const next = on ? got.filter(x => x !== i) : [...got, i];
+      push({ t: 'rsvp', p: p.id, m: G.me, v: p.rsvp[G.me], s: next.length === all.length ? 0 : L.maskOf(next) });
+      if (shell) tell({ type: 'haptic', kind: 'tick' });
+      render();
+      const el = app.querySelector(`[data-act="part"][data-p="${d.p}"][data-i="${i}"]`); if (el) el.focus({ preventScroll: true });
+    },
     rsvp(d) {
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
       const said = p.rsvp[G.me] || '';
-      if (!(d.set && said === d.v)) push({ t: 'rsvp', p: d.p, m: G.me, v: said === d.v ? '' : d.v });
+      if (!(d.set && said === d.v)) push({ t: 'rsvp', p: d.p, m: G.me, v: said === d.v ? '' : d.v, s: (p.part && p.part[G.me]) || 0 });
       if (shell && !d.set) tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`);
@@ -952,9 +978,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     },
     event(f) {
       const text = clean(f.text.value, 80), sh = ui.sheet;
-      if (!text || sh.i == null) return;
+      if (!text || !sh.sel.length) return;
       const id = rid();
-      push({ t: 'plan', id, w: sh.w, i: sh.i, text, by: G.me }, { t: 'rsvp', p: id, m: G.me, v: 'in' });
+      push({ t: 'plan', id, w: sh.w, i: sh.sel[0], text, by: G.me, ...(sh.sel.length > 1 ? { s: L.maskOf(sh.sel) } : {}) }, { t: 'rsvp', p: id, m: G.me, v: 'in' });
       closeSheet(); render();
     },
   };
@@ -1035,7 +1061,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     if (!e.target.matches('select[name=w]') || !ui.sheet) return;
     ui.sheet.w = e.target.value;
     const open = openSlots(ui.sheet.w);
-    if (!open.includes(ui.sheet.i)) ui.sheet.i = open[0];
+    ui.sheet.sel = ui.sheet.sel.filter(i => open.includes(i));
+    if (!ui.sheet.sel.length) ui.sheet.sel = [open[0]];
     renderSheet();
     const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });

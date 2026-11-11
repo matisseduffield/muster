@@ -64,6 +64,31 @@
   }
   const slotName = i => `${SLOTS[i].day} ${SLOTS[i].part}`;
   const slotWhen = (week, i) => { const d = slotDate(week, i); return `${slotName(i)}, ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+  // An event can run over several slots: p.s holds them as bits, p.i is the first.
+  const bits = mask => SLOTS.map((_, i) => i).filter(i => mask >> i & 1);
+  const maskOf = list => list.reduce((m, i) => m | 1 << i, 0);
+  const planSlots = p => (p.s && bits(p.s).length ? bits(p.s) : [p.i]);
+  // "Sat day and night", "Sat night and Sun day", "Sat and Sun". Within one day, short says just "night".
+  function slotsName(list, short) {
+    const days = [];
+    for (const i of list) { const d = days.find(x => x.day === SLOTS[i].day); if (d) d.parts.push(SLOTS[i].part); else days.push({ day: SLOTS[i].day, parts: [SLOTS[i].part] }); }
+    const one = days.length === 1;
+    const said = days.map(d => (short ? d.parts.join(' and ') : d.parts.length === 2 && !one ? d.day : `${d.day} ${d.parts.join(' and ')}`));
+    return said.length > 1 ? `${said.slice(0, -1).join(', ')} and ${said[said.length - 1]}` : said[0];
+  }
+  // "Sat day and night, 14 Nov", "Sat and Sun, 14–15 Nov"
+  function planWhen(p) {
+    const list = planSlots(p), a = slotDate(p.w, list[0]), b = slotDate(p.w, list[list.length - 1]);
+    const dates = a.getTime() === b.getTime() ? `${a.getDate()} ${MONTHS[a.getMonth()]}`
+      : a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()} ${MONTHS[a.getMonth()]}`
+      : `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]}`;
+    return `${slotsName(list)}, ${dates}`;
+  }
+  // The slots of an event a person can make: all of them unless they said otherwise.
+  function planPart(p, m) {
+    const all = planSlots(p), mine = bits((p.part && p.part[m]) || 0).filter(i => all.includes(i));
+    return mine.length ? mine : all;
+  }
 
   const member = (state, id) => state.members.find(m => m.id === id);
 
@@ -134,9 +159,14 @@
       if (op.deleted) { if (at >= 0) state.plans.splice(at, 1); }
       else if (at >= 0) Object.assign(state.plans[at], { w: op.w, i: op.i, text: op.text });
       else state.plans.push({ id: op.id, w: op.w, i: op.i, text: op.text, by: op.by, at: Date.now(), rsvp: {} });
+      const p = !op.deleted && state.plans.find(x => x.id === op.id);
+      if (p) { if (op.s && bits(op.s).length > 1) p.s = op.s; else delete p.s; }
     } else if (op.t === 'rsvp') {
       const p = state.plans.find(x => x.id === op.p);
-      if (p) { if (op.v) p.rsvp[op.m] = op.v; else delete p.rsvp[op.m]; }
+      if (p) {
+        if (op.v) p.rsvp[op.m] = op.v; else delete p.rsvp[op.m];
+        if (op.v && op.s) (p.part || (p.part = {}))[op.m] = op.s; else if (p.part) delete p.part[op.m];
+      }
     }
     return state;
   }
@@ -148,5 +178,5 @@
     return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
   }
 
-  return { SLOTS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, rangeParts, relLabel, slotName, slotWhen, member, answer, next, roll, waiting, best, applyOp, names };
+  return { SLOTS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, rangeParts, relLabel, slotName, slotWhen, bits, maskOf, planSlots, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
 });
