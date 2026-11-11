@@ -167,7 +167,7 @@ a { color: inherit; }
 .slide.drag .knob, .slide.still .knob { transition: background-color .15s; }
 .slide.drag { cursor: grabbing; }
 .slide button {
-  position: relative; appearance: none; min-height: 40px; padding: 0 2px; border: 0; border-radius: 6px;
+  position: relative; appearance: none; min-height: 44px; padding: 0 2px; border: 0; border-radius: 6px;
   background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color .15s;
 }
 .slide[data-pos="0"] button:nth-of-type(1), .slide[data-pos="1"] button:nth-of-type(2), .slide[data-pos="2"] button:nth-of-type(3) { color: var(--on-ink); font-weight: 600; }
@@ -295,7 +295,7 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 
 .legal { margin-top: 4px; text-align: center; font-size: .8rem; color: var(--muted); }
 .legal nav { display: flex; justify-content: center; gap: 28px; }
-.legal a { padding: 10px 8px; font-size: .84rem; text-decoration: none; }
+.legal a { display: flex; align-items: center; min-height: 44px; padding: 0 8px; font-size: .84rem; text-decoration: none; }
 .lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
 .lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
 .lone p { color: var(--muted); }
@@ -387,15 +387,25 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     tell({ type: 'notify', items });
   }
 
+  // Changes go a slice at a time, so a long list made offline never asks too much of one request.
+  const SLICE = 40;
+  // The iPhone app gives the page a little longer to send when it goes out of sight.
+  let owing = null;
+  function owe() {
+    if (!shell) return;
+    const on = !!(G && G.id && G.queue.length && !G.gone && !G.left);
+    if (on !== owing) { owing = on; tell({ type: 'unsent', on }); }
+  }
+
   let busy = false, fails = 0, again = 0;
   async function sync() {
-    if (!G || busy) return;
+    if (!G || !G.id || busy) return;
     const g = G;
     busy = true;
     clearTimeout(again);
     let ok = false;
     try {
-      const sending = g.queue.slice();
+      const sending = g.queue.slice(0, SLICE);
       const res = sending.length
         ? await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: sending }) })
         : await fetch(`${API}/api/g/${g.id}`, { cache: 'no-store', headers: g.state && g.state.group.version ? { 'If-None-Match': `"${g.state.group.version}"` } : {} });
@@ -419,6 +429,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     }
     busy = false;
     if (g !== G) return sync();
+    owe();
     const was = g.offline;
     g.offline = !ok;
     if (ok) { fails = 0; g.failed = false; } else { fails = Math.min(fails + 1, 5); again = setTimeout(sync, 1500 * 2 ** fails); }
@@ -431,6 +442,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     ops.forEach(op => L.applyOp(G.state, op));
     G.queue.push(...ops);
     persist(G);
+    owe();
     sync();
   }
 
@@ -444,13 +456,16 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function route() {
     const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
     ui = { open: {}, more: false, sheet: null, confirm: null };
-    if (!m) { G = null; }
+    // A group link that's the wrong length: say so, rather than show the home screen.
+    if (!m && location.pathname.startsWith('/g/')) G = { id: '', me: null, state: null, queue: [], gone: true };
+    else if (!m) { G = null; }
     else {
       const id = m[1], s = saved.find(x => x.id === id), c = ls.get('muster.g.' + id, null);
       G = { id, me: s ? s.me : null, state: c ? c.state : null, queue: c && c.queue ? c.queue : [] };
       sync();
     }
     view = '';
+    owe();
     render();
     renderSheet();
     window.scrollTo(0, 0);
@@ -472,6 +487,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function refresh(force) {
     const k = kind();
     if (k !== view || k === 'board' || force && k !== 'home' && k !== 'join') render();
+    // An open sheet keeps up too, unless someone is typing or choosing in it.
+    const at = document.activeElement;
+    if (ui.sheet && view === 'board' && !(at && sheetRoot.contains(at) && /^(INPUT|TEXTAREA|SELECT)$/.test(at.tagName))) renderSheet(true);
   }
 
   function render() {
@@ -544,7 +562,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     name: () => `<div class="onb">${stepBar()}
       <h1 class="ask">What's your name?</h1>
       <form class="stack" data-form="name" autocomplete="off">
-        <input type="text" name="me" maxlength="24" aria-label="Your name" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" enterkeyhint="next">
+        <input type="text" name="me" maxlength="24" aria-label="Your name" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="next">
         <button class="btn wide">Continue</button>
       </form></div>`,
     choose: () => `<div class="onb">${stepBar()}
@@ -580,7 +598,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       ${bar()}
       <div><h1 class="lead">${esc(s.group.name)}</h1><p>${s.members.length ? `${esc(L.names(s.members))} ${s.members.length === 1 ? 'is' : 'are'} marking when they're free. Add yourself.` : "Add yourself to mark when you're free."}</p></div>
       <form class="stack" data-form="join" autocomplete="off">
-        <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
+        <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"></label>
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
         ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
       </form>
@@ -656,16 +674,22 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   // ---- Sheets ----
 
-  function renderSheet() {
+  let sheetDrawn = '';
+  // quiet: only if something in it has changed.
+  function renderSheet(quiet) {
     const sh = ui.sheet;
-    if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; document.body.style.overflow = ''; return; }
+    if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
+    const html = sh.kind === 'event' ? eventSheet(sh) : settingsSheet();
+    if (quiet && html === sheetDrawn) return;
+    sheetDrawn = html;
     const y = sheetRoot.querySelector('.sheet') ? sheetRoot.querySelector('.sheet').scrollTop : 0;
     // Whatever is half typed survives the redraw, and so does the cursor.
     const fieldKey = el => el.form ? el.form.dataset.form + '/' + el.name : '';
     const typed = {}, at = document.activeElement;
-    sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { typed[fieldKey(el)] = el.value; });
+    sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { if (el.value !== el.defaultValue) typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
-    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${sh.kind === 'event' ? eventSheet(sh) : settingsSheet()}</div>`;
+    const inside = !!at && sheetRoot.contains(at);
+    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -673,6 +697,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (k === focused) el.focus({ preventScroll: true });
     });
     sheetRoot.querySelector('.sheet').scrollTop = y;
+    if (quiet && inside && !focused) sheetRoot.querySelector('.sheet').focus({ preventScroll: true });
   }
   // Opening a sheet never puts the cursor in a field, so the keyboard stays down.
   function openSheet(sh) {
@@ -702,8 +727,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     }).join('');
     return `${sheetHead('You and the group')}
       <div class="sheet-body">
-        <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
-        <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
+        <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
+        <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required autocapitalize="words" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
         ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>` : ''}
         <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
@@ -745,6 +770,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     mark(d) {
       const i = +d.i, said = ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i];
       if (!(d.set && said === d.v)) push({ t: 'mark', m: G.me, w: d.w, i, v: said === d.v ? '-' : d.v });
+      // A drag has ticked on its way; a tap gets its own.
+      if (shell && !d.set) tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="mark"][data-w="${d.w}"][data-i="${i}"][data-v="${d.v}"]`);
       if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(ANSWERS, said)); }
@@ -765,12 +792,17 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
       const said = p.rsvp[G.me] || '';
       if (!(d.set && said === d.v)) push({ t: 'rsvp', p: d.p, m: G.me, v: said === d.v ? '' : d.v });
+      if (shell && !d.set) tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`);
       if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(REPLIES, said)); }
     },
     scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
-    invite() { send(`${G.state.group.name}: mark when you're free`); },
+    invite() {
+      // A group started offline has no link to open until the server has it.
+      if (!G.state.group.version) { sync(); return toast("Group not sent yet. Invite once you're online."); }
+      send(`${G.state.group.name}: mark when you're free`);
+    },
     settings() { openSheet({ kind: 'settings' }); },
     close() { closeSheet(); },
     remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
@@ -778,7 +810,10 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (!sure('leave')) return renderSheet();
       const g = G;
       g.left = true;
-      fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: [...g.queue, { t: 'member', id: g.me, removed: true }] }) }).catch(() => {});
+      const ops = [...g.queue, { t: 'member', id: g.me, removed: true }];
+      (async () => {
+        for (let k = 0; k < ops.length; k += SLICE) await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: ops.slice(k, k + SLICE) }) });
+      })().catch(() => {});
       forget(g.id);
       go('/');
     },
@@ -834,13 +869,13 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const name = clean(f.name.value, 24);
       if (!name) return;
       if (name && name !== L.member(G.state, G.me).name) { push({ t: 'member', id: G.me, name }); ls.set('muster.name', name); render(); }
-      f.name.blur(); toast('Saved');
+      f.name.blur(); renderSheet(); toast('Saved');
     },
     'rename-group'(f) {
       const name = clean(f.name.value, 40);
       if (!name) return;
       if (name && name !== G.state.group.name) { push({ t: 'group', name }); remember(G); render(); }
-      f.name.blur(); toast('Saved');
+      f.name.blur(); renderSheet(); toast('Saved');
     },
     event(f) {
       const text = clean(f.text.value, 80), sh = ui.sheet;
@@ -917,14 +952,20 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     renderSheet();
     const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && ui.sheet) closeSheet();
+    // On a phone the keyboard's done key puts the keyboard away. Only Post posts,
+    // once the day has been looked at.
+    if (e.key === 'Enter' && !e.isComposing && (shell || matchMedia('(pointer: coarse)').matches) && e.target.matches && e.target.matches('form[data-form="event"] input[name=text]')) { e.preventDefault(); e.target.blur(); }
+  });
   if (shell) {
     shell.onmessage = e => {
       let m; try { m = JSON.parse(e.data); } catch (x) { return; }
       if (m.type === 'info') {
         // Notifications switched off in Settings: the reminder is off too.
         if (!m.notifications && remindOn()) ls.set('muster.remind', false);
-        if (m.notifications) remindBlocked = false;
+        // Allowed in Settings after asking here: the reminder they wanted goes on.
+        if (m.notifications && remindBlocked) { remindBlocked = false; ls.set('muster.remind', true); }
         plan(); renderSheet();
       }
       if (m.type === 'notifications') {
