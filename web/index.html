@@ -432,7 +432,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a></header>`;
 
   // The iPhone app carries its own way to the terms and to us.
-  const legal = () => shell ? `<p class="hint">Starting or joining a group means you agree to the <a href="https://teloone.au/apps/muster/terms/">terms</a>. <a href="https://teloone.au/apps/muster/privacy/">Privacy</a>. <a href="mailto:hello@telo.au?subject=Muster">Contact</a>.</p>` : '';
+  const legal = () => shell ? `<p class="hint">Starting or joining a group means you agree to the <a href="https://teloone.au/apps/muster/terms/">terms</a>. <a href="https://teloone.au/apps/muster/privacy/">Privacy</a>. <a href="mailto:support@teloone.au?subject=Muster">Contact</a>.</p>` : '';
 
   function home() {
     const list = saved.length ? `<section class="section"><div class="sec-head"><h2>Your groups</h2></div><nav class="rows">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav></section>` : '';
@@ -588,7 +588,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
         ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : 'Turn on'}</button></div></div></div>` : ''}
-        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:hello@telo.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
+        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
       </div>`;
   }
 
