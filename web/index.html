@@ -262,13 +262,20 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 <div id="toast" role="status"></div>
 <script src="lib.js?v=1"></script>
 <script>
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
 <script>
 (() => {
   const L = Muster;
   const app = document.getElementById('app'), sheetRoot = document.getElementById('sheet'), toastEl = document.getElementById('toast');
   const WEEKS = 8;
+
+  // Inside the iPhone app the pages come with the app, and the app lends what a
+  // page can't do alone: the share sheet, a tick under the thumb, reminders.
+  const shell = window.musterApp || null;
+  const SITE = shell ? 'https://muster.teloone.au' : location.origin;
+  const API = shell ? SITE : '';
+  const tell = m => shell.postMessage(JSON.stringify(m));
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const rid = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -292,15 +299,38 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 
   // ---- Keeping in step with the server ----
 
-  const persist = g => ls.set('muster.g.' + g.id, { state: g.state, queue: g.queue });
+  const persist = g => { ls.set('muster.g.' + g.id, { state: g.state, queue: g.queue }); plan(); };
   function remember(g) {
     const at = saved.findIndex(s => s.id === g.id);
     const row = { id: g.id, name: g.state ? g.state.group.name : (at >= 0 ? saved[at].name : ''), me: g.me };
     if (at >= 0) saved[at] = row; else saved.unshift(row);
     ls.set('muster.groups', saved);
+    plan();
   }
 
-  function forget(id) { saved = saved.filter(s => s.id !== id); ls.set('muster.groups', saved); ls.del('muster.g.' + id); }
+  function forget(id) { saved = saved.filter(s => s.id !== id); ls.set('muster.groups', saved); ls.del('muster.g.' + id); plan(); }
+
+  // The Thursday reminder, in the iPhone app. The phone shows it by itself: one
+  // for each weekend ahead you haven't fully answered, at 6 the evening before.
+  const remindOn = () => !!ls.get('muster.remind', false);
+  let planned = '';
+  function plan() {
+    if (!shell) return;
+    const items = [], now = Date.now();
+    if (remindOn()) {
+      const mine = saved.map(g => ({ g, c: ls.get('muster.g.' + g.id, null) })).filter(x => x.g.me && x.c && x.c.state);
+      for (const w of L.weeks(new Date(), WEEKS)) {
+        const at = L.parse(L.addDays(w, -1)); at.setHours(18, 0, 0, 0);
+        if (at.getTime() <= now) continue;
+        const open = mine.find(x => (((x.c.state.marks || {})[x.g.me] || {})[w] || L.BLANK).includes('-'));
+        if (open) items.push({ id: 'weekend-' + w, at: at.getTime(), title: open.g.name || 'Muster', body: "Mark when you're free this weekend.", open: '/g/' + open.g.id });
+      }
+    }
+    const next = JSON.stringify(items);
+    if (next === planned) return;
+    planned = next;
+    tell({ type: 'notify', items });
+  }
 
   let busy = false, fails = 0, again = 0;
   async function sync() {
@@ -312,8 +342,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     try {
       const sending = g.queue.slice();
       const res = sending.length
-        ? await fetch(`/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: sending }) })
-        : await fetch(`/api/g/${g.id}`, { cache: 'no-store', headers: g.state && g.state.group.version ? { 'If-None-Match': `"${g.state.group.version}"` } : {} });
+        ? await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: sending }) })
+        : await fetch(`${API}/api/g/${g.id}`, { cache: 'no-store', headers: g.state && g.state.group.version ? { 'If-None-Match': `"${g.state.group.version}"` } : {} });
       if (res.status === 304) {
         ok = true;
       } else if (res.ok) {
@@ -401,6 +431,9 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
   const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
   const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a></header>`;
 
+  // The iPhone app carries its own way to the terms and to us.
+  const legal = () => shell ? `<p class="hint">Starting or joining a group means you agree to the <a href="https://teloone.au/apps/muster/terms/">terms</a>. <a href="https://teloone.au/apps/muster/privacy/">Privacy</a>. <a href="mailto:hello@telo.au?subject=Muster">Contact</a>.</p>` : '';
+
   function home() {
     const list = saved.length ? `<section class="section"><div class="sec-head"><h2>Your groups</h2></div><nav class="rows">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav></section>` : '';
     return `
@@ -415,7 +448,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
           <button class="btn wide">Start</button>
         </form>
         <p class="hint">No accounts. Anyone with the group's link can see it and answer, so only send it to the group.</p>
-      </section>`;
+      </section>${legal()}`;
   }
 
   const loading = () => `${bar()}<div class="lone"><p>Fetching the group.</p></div>`;
@@ -433,7 +466,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
         ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
       </form>
-      ${names}`;
+      ${names}${legal()}`;
   }
 
   // A list of people by name, with you first and called "you".
@@ -554,7 +587,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
         <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
-        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button></div>
+        ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : 'Turn on'}</button></div></div></div>` : ''}
+        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:hello@telo.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
       </div>`;
   }
 
@@ -576,7 +610,8 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 
   // Hand a message and the group's link to the share sheet, or copy them.
   async function send(text) {
-    const url = `${location.origin}/g/${G.id}`;
+    const url = `${SITE}/g/${G.id}`;
+    if (shell) return tell({ type: 'share', title: G.state.group.name, text: `${text}\n${url}` });
     const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied'); } catch (x) { toast("Couldn't copy the link."); } };
     if (!navigator.share) return copy();
     try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
@@ -620,11 +655,15 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
       if (!sure('leave')) return renderSheet();
       const g = G;
       g.left = true;
-      fetch(`/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: [...g.queue, { t: 'member', id: g.me, removed: true }] }) }).catch(() => {});
+      fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: [...g.queue, { t: 'member', id: g.me, removed: true }] }) }).catch(() => {});
       forget(g.id);
       go('/');
     },
     claim(d) { G.me = d.id; remember(G); render(); },
+    remind() {
+      if (!remindOn()) return tell({ type: 'askNotifications' });
+      ls.set('muster.remind', false); plan(); renderSheet();
+    },
     retry() { G.failed = false; render(); sync(); },
   };
 
@@ -698,7 +737,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     }
     g.p = Math.max(0, Math.min(2, (e.clientX - g.left) / g.step - .5));
     const k = String(Math.round(g.p));
-    if (k !== g.el.dataset.pos) { g.el.dataset.pos = k; if (navigator.vibrate) navigator.vibrate(6); }
+    if (k !== g.el.dataset.pos) { g.el.dataset.pos = k; if (shell) tell({ type: 'haptic', kind: 'tick' }); else if (navigator.vibrate) navigator.vibrate(6); }
     g.el.style.setProperty('--p', g.p);
   });
   const drop = e => {
@@ -738,6 +777,23 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+
+  if (shell) {
+    shell.onmessage = e => {
+      let m; try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (m.type === 'info') {
+        // Notifications switched off in Settings: the reminder is off too.
+        if (!m.notifications && remindOn()) ls.set('muster.remind', false);
+        plan(); renderSheet();
+      }
+      if (m.type === 'notifications') {
+        if (m.allowed) { ls.set('muster.remind', true); plan(); }
+        else toast('Notifications are off for Muster in Settings.');
+        renderSheet();
+      }
+    };
+    tell({ type: 'hello' });
+  }
 
   route();
 })();
