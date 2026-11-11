@@ -38,11 +38,14 @@ targets:
         CFBundleURLTypes:
           - CFBundleURLName: com.matisseduffield.muster
             CFBundleURLSchemes: [muster]
-    entitlements:
-      path: App/App.entitlements
-      properties:
-        com.apple.developer.associated-domains:
-          - applinks:muster.teloone.au
+    # Web links opening the app. Off until muster.teloone.au serves the file that
+    # names the Apple team: an entitlement with nothing behind it draws a question
+    # in review, and a free Apple account cannot sign it.
+    # entitlements:
+    #   path: App/App.entitlements
+    #   properties:
+    #     com.apple.developer.associated-domains:
+    #       - applinks:muster.teloone.au
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.matisseduffield.muster
