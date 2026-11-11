@@ -135,6 +135,13 @@ a { color: inherit; }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 2px; }
 .sec-head h2 { font-size: .95rem; font-weight: 600; }
 .sec-head .muted { font-size: .88rem; }
+.sec-side { display: flex; align-items: center; gap: 10px; }
+/* A weekend's five slots as bars: the taller, the more of the group is free. */
+.sky { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
+.sky i { position: relative; width: 5px; height: 100%; border-radius: 2px; background: var(--line); overflow: hidden; }
+.sky i.gap { margin-left: 3px; }
+.sky i.past { opacity: .45; }
+.sky b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px; background: var(--pos); transform-origin: bottom; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
 .empty { padding: 2px 2px 0; font-size: .9rem; color: var(--muted); }
 
@@ -186,27 +193,54 @@ a { color: inherit; }
 /* One block a person: green free, amber maybe, grey busy, pale no answer */
 .pips { flex: none; display: block; fill: var(--line); }
 .pips .f { fill: var(--pos); } .pips .m { fill: var(--mid); } .pips .b { fill: var(--line-strong); }
-.slot-n b { font-weight: 600; color: var(--ink); }
+.slot-n b { display: inline-block; font-weight: 600; color: var(--ink); }
 .slot-n.all { color: var(--pos); font-weight: 600; }
-.who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 4px; padding: 6px 4px 4px 14px; }
-.who { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 3px 8px; width: 100%; margin: 0; font-size: .86rem; }
-.who dt { display: flex; align-items: center; gap: 6px; color: var(--muted); }
-.who dt::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 2px; background: var(--line); }
-.who dt.f::before { background: var(--pos); } .who dt.m::before { background: var(--mid); } .who dt.b::before { background: var(--line-strong); }
-.who dd { margin: 0; overflow-wrap: anywhere; }
+.top-slot { margin-left: 2px; padding: 0 5px; font-size: .7rem; font-weight: 600; line-height: 16px; color: var(--pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, var(--surface)); border-radius: 4px; }
+/* Everyone can come: a dot that keeps ringing. */
+.live { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
+.live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--pos); animation: ring 2.4s ease-out infinite; }
+@keyframes ring { from { opacity: .55; transform: scale(1); } 70%, to { opacity: 0; transform: scale(3.2); } }
+.who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 8px; padding: 4px 4px 6px 14px; }
+
+/* Everyone by name, and how they answered: filled is yes, dashed is maybe,
+   struck through is no, dotted hasn't said. */
+.roster { display: flex; flex-wrap: wrap; gap: 5px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.roster li { display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; min-height: 26px; padding: 2px 8px; border: 1px solid transparent; border-radius: 5px; font-size: .84rem; line-height: 20px; white-space: nowrap; }
+.roster .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.roster .in { background: color-mix(in srgb, var(--pos) 14%, var(--surface)); border-color: color-mix(in srgb, var(--pos) 42%, var(--surface)); font-weight: 500; }
+.roster .maybe { background: color-mix(in srgb, var(--mid) 8%, var(--surface)); border: 1px dashed color-mix(in srgb, var(--mid) 75%, var(--surface)); }
+.roster .out { padding-inline: 4px; color: var(--muted); }
+.roster .out .nm { text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.roster .none { color: var(--muted); border: 1px dotted var(--line-strong); }
+.roster .me { font-weight: 600; }
+.roster small { font-size: .74rem; font-weight: 400; color: var(--muted); }
+.roster .more { padding: 0; }
+.roster .more button { appearance: none; min-height: 26px; padding: 0 8px; background: none; border: 0; font-size: .84rem; font-weight: 600; color: var(--accent); }
 @media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 156px; } .slide button { font-size: .8rem; } }
 
 /* Events */
 .events { display: grid; gap: 8px; }
-.ev { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 12px; }
+.ev { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 14px; overflow: hidden; }
+.ev-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+/* The date, the way a ticket carries it. */
+.ev-date { display: grid; justify-items: center; align-content: center; min-width: 46px; height: 46px; padding: 0 7px; border-radius: 6px; background: var(--bg); line-height: 1; }
+.ev-date b { font-size: 1.3rem; font-weight: 600; letter-spacing: -.02em; }
+.ev-date.wide b { font-size: 1rem; }
+.ev-date span { margin-top: 3px; font-size: .66rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.ev-date.now { background: var(--ink); color: var(--on-ink); }
+.ev-date.now span { color: inherit; opacity: .75; }
 .ev-when { font-size: .84rem; color: var(--muted); }
 .ev-title { font-size: 1.05rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.ev-top .link { align-self: start; padding-top: 2px; }
+/* Where the stub tears off. */
+.ev-tear { position: relative; height: 0; margin: 2px -14px; border-top: 1.5px dashed var(--line); }
+.ev-tear::before, .ev-tear::after { content: ""; position: absolute; top: -8px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
+.ev-tear::before { left: -8px; }
+.ev-tear::after { right: -8px; }
 .ev-part { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; }
 .ev-part.long { display: grid; }
 .ev-part > span { font-size: .86rem; color: var(--muted); }
 .ev-part .seg button { min-height: 34px; padding: 0 14px; font-size: .86rem; }
-.ev-who { font-size: .86rem; color: var(--muted); overflow-wrap: anywhere; }
-.ev-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: -4px; font-size: .84rem; color: var(--muted); }
 
 /* Sheets */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
@@ -214,6 +248,10 @@ a { color: inherit; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 600px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
   background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; outline: 0;
 }
+.sheet.rise { animation: rise .26s cubic-bezier(.2, .9, .3, 1); }
+.backdrop.rise { animation: dim .2s; }
+@keyframes rise { from { transform: translateY(28px); opacity: 0; } }
+@keyframes dim { from { opacity: 0; } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 6px 20px; border-bottom: 1px solid var(--line); }
 .sheet-head h2 { font-size: 1rem; font-weight: 600; }
 .sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 18px max(20px, env(safe-area-inset-left, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); }
@@ -309,7 +347,7 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .gcard-head strong { display: block; font-size: 1.15rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gcard-head small { display: block; font-size: .84rem; color: var(--muted); }
 .gcard-head svg { flex: none; color: var(--muted); }
-.gcard .wk-col i { height: 10px; border-radius: 3px; animation: none; }
+.gcard .wk-col i { height: 10px; border-radius: 3px; animation-duration: .35s; animation-delay: calc(var(--c) * 45ms + var(--r) * 20ms + 60ms); }
 .gcard .wk-say.none { font-weight: 400; color: var(--muted); }
 .gcard .wk-say.none::before { background: var(--line-strong); }
 
@@ -538,7 +576,59 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     // Nothing new: leave the page alone, so focus and half-typed names survive.
     if (html === drawn) return;
     drawn = html;
+    const was = stage, old = snap();
+    stage = view + '|' + (view === 'home' ? step() : G ? G.id : '');
     app.innerHTML = html;
+    move(old, stage !== was);
+  }
+
+  // ---- Movement ----
+  // The page is drawn afresh each time, so what moves is worked out from where
+  // each named piece (data-k) sat before and sits now: a piece that changed
+  // place slides there, a new one arrives, a changed one shows it.
+  const calm = matchMedia('(prefers-reduced-motion: reduce)');
+  const EASE = 'cubic-bezier(.2, .9, .3, 1)';
+  let stage = '';
+  function snap() {
+    const m = new Map();
+    if (calm.matches || !app.animate) return m;
+    for (const el of app.querySelectorAll('[data-k]')) m.set(el.dataset.k, { r: el.getBoundingClientRect(), sig: el.dataset.sig });
+    return m;
+  }
+  function move(old, fresh) {
+    if (calm.matches || !app.animate) return;
+    // A new screen comes in a piece at a time.
+    if (fresh) {
+      [...app.children].forEach((el, n) => el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: Math.min(n, 6) * 45, easing: EASE, fill: 'backwards' }));
+      app.querySelectorAll('[data-fx="bar"]').forEach((el, n) => el.animate([{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: 420, delay: 160 + Math.min(n, 20) * 22, easing: EASE, fill: 'backwards' }));
+      return;
+    }
+    const els = [...app.querySelectorAll('[data-k]')], by = new Map();
+    for (const el of els) {
+      const o = old.get(el.dataset.k); if (!o) continue;
+      const r = el.getBoundingClientRect();
+      by.set(el, { x: o.r.left - r.left, y: o.r.top - r.top, o, r });
+    }
+    let born = 0;
+    for (const el of els) {
+      const d = by.get(el), fx = el.dataset.fx;
+      if (!d) {
+        if (fx === 'bar') el.animate([{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: 360, easing: EASE });
+        else if (!fx) el.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: Math.min(born++, 14) * 16, easing: EASE, fill: 'backwards' });
+        continue;
+      }
+      if (fx === 'bar') {
+        if (d.r.height && Math.abs(d.o.r.height - d.r.height) > .5) el.animate([{ transform: `scaleY(${d.o.r.height / d.r.height})` }, { transform: 'none' }], { duration: 380, easing: EASE });
+        continue;
+      }
+      // Inside something that itself moved, only the difference is this piece's own.
+      const up = el.parentElement.closest('[data-k]'), u = up && by.get(up);
+      const x = d.x - (u ? u.x : 0), y = d.y - (u ? u.y : 0), changed = d.o.sig !== el.dataset.sig;
+      if (fx === 'tick') { if (changed) el.animate([{ opacity: 0, transform: 'translateY(70%)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: EASE }); }
+      else if (fx === 'pop') { if (changed) el.animate([{ transform: 'scaleY(1)' }, { transform: 'scaleY(1.9)' }, { transform: 'scaleY(1)' }], { duration: 320, easing: 'ease-out' }); }
+      else if (Math.abs(x) > .5 || Math.abs(y) > .5) el.animate([{ transform: `translate(${x}px, ${y}px)` }, { transform: 'none' }], { duration: 360, easing: EASE });
+      else if (changed) el.animate([{ transform: 'scale(.9)' }, { transform: 'none' }], { duration: 260, easing: EASE });
+    }
   }
 
   // ---- Screens ----
@@ -583,7 +673,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const cut = k => Math.round(k * rows / n);
       const f = cut(r.f.length), m = Math.min(rows - f, cut(r.m.length)), b = Math.min(rows - f - m, cut(r.b.length));
       const bars = 'f'.repeat(f) + 'm'.repeat(m) + 'b'.repeat(b) + '-'.repeat(rows - f - m - b);
-      return `<span class="wk-col${top && top.i === i ? ' best' : ''}"><b>${sl.day}<span>${sl.part}</span></b>${[...bars].map(v => `<i class="${v === '-' ? '' : v}"></i>`).join('')}</span>`;
+      return `<span class="wk-col${top && top.i === i ? ' best' : ''}"><b>${sl.day}<span>${sl.part}</span></b>${[...bars].map((v, r) => `<i class="${v === '-' ? '' : v}" style="--c:${i};--r:${r}"></i>`).join('')}</span>`;
     }).join('');
     const say = top ? (top.all ? `${L.slotName(top.i)} suits everyone` : `${L.slotName(top.i)} suits ${top.f} of ${n}`) : 'No time that suits yet';
     return `<a class="gcard" href="/g/${s.id}" data-nav aria-label="${esc(s.name || 'Group')}. ${say}.">${head(`${n} ${n === 1 ? 'person' : 'people'} · This weekend`)}
@@ -652,8 +742,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       ${names}${legal() || links()}`;
   }
 
-  // A list of people by name, with you first and called "you".
-  const people = (l, max = 6, named) => esc(L.names([...l].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => ({ name: !named && m.id === G.me ? 'you' : m.name })), max));
   const openSlots = (w, now = new Date()) => L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
 
   function board() {
@@ -677,52 +765,73 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // Where the knob sits: 0, 1 or 2, or '-' before you've answered.
   const pos = (list, v) => { const k = list.findIndex(a => a[0] === v); return k < 0 ? '-' : k; };
   // The group's answers as a strip of blocks, one a person up to twelve.
-  function pips(r, n) {
+  function pips(r, n, k) {
     const gap = n > 12 ? 0 : .22, parts = [['f', r.f.length], ['m', r.m.length], ['b', r.b.length], ['', r['-'].length]];
     let x = 0, out = '';
-    for (const [c, k] of parts) for (let j = 0; j < k; j++, x++) out += `<rect class="${c}" x="${x}" width="${1 - gap}" height="1"/>`;
-    return `<svg class="pips" viewBox="0 0 ${n - gap} 1" width="${Math.min(n * 11 - 2, 72)}" height="6" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
+    for (const [c, q] of parts) for (let j = 0; j < q; j++, x++) out += `<rect class="${c}" x="${x}" width="${1 - gap}" height="1"/>`;
+    return `<svg class="pips" data-k="p:${k}" data-fx="pop" data-sig="${parts.map(p => p[1]).join('.')}" viewBox="0 0 ${n - gap} 1" width="${Math.min(n * 11 - 2, 72)}" height="6" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
+  }
+
+  // Everyone by name, each drawn the way they answered, you first in your lot.
+  // lots: [class, said aloud, members]. A big group folds away past twelve.
+  const CAP = 12;
+  function roster(key, lots, note) {
+    const all = lots.flatMap(g => [...g[2]].sort((a, b) => (b.id === G.me) - (a.id === G.me)).map(m => [g[0], g[1], m]));
+    const open = !!ui.open['r:' + key], show = open || all.length <= CAP ? all : all.slice(0, CAP - 1);
+    return `<ul class="roster">${show.map(([c, said, m]) => {
+      const nt = note ? note(m, c) : '';
+      return `<li class="${c}${m.id === G.me ? ' me' : ''}" data-k="c:${key}:${m.id}" data-sig="${c}/${nt}"><span class="vh">${said}: </span><span class="nm">${m.id === G.me ? 'You' : esc(m.name)}</span>${nt ? `<small>${nt}</small>` : ''}</li>`;
+    }).join('')}${all.length > CAP ? `<li class="more"><button data-act="all" data-key="${key}" aria-expanded="${open}">${open ? 'Less' : `+${all.length - show.length}`}</button></li>` : ''}</ul>`;
   }
 
   function week(w, now) {
-    const s = G.state, n = s.members.length;
+    const s = G.state, n = s.members.length, top = L.best(s, [w], now)[0];
     const rows = openSlots(w, now).map(i => {
-      const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i];
+      const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i], k = w + ':' + i;
       const all = n > 1 && r.f.length === n;
-      const count = all ? `<span class="slot-n all">Everyone's free</span>`
-        : `<span class="slot-n">${pips(r, n)}<span><b>${r.f.length}</b> free<span class="vh"> of ${n}${r.m.length ? `, ${r.m.length} maybe` : ''}</span></span></span>`;
-      const who = open ? `<div class="who-box"><dl class="who">${[['Free', r.f, 'f'], ['Maybe', r.m, 'm'], ['Busy', r.b, 'b'], ['No answer', r['-'], '']].filter(x => x[1].length).map(x => `<dt class="${x[2]}">${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl><button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
+      const count = all ? `<span class="slot-n all"><span class="live"></span>Everyone's free</span>`
+        : `<span class="slot-n">${pips(r, n, k)}<span><b data-k="n:${k}" data-fx="tick" data-sig="${r.f.length}">${r.f.length}</b> free<span class="vh"> of ${n}${r.m.length ? `, ${r.m.length} maybe` : ''}</span></span></span>`;
+      const who = open ? `<div class="who-box" data-k="w:${k}">${roster(k, [['in', 'Free', r.f], ['maybe', 'Maybe', r.m], ['out', 'Busy', r.b], ['none', 'No answer', r['-']]])}<button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
       return `<div class="slot">
-        <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}</span>${count}</button>
+        <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}${!all && top && top.i === i ? `<span class="top-slot">Best</span>` : ''}</span>${count}</button>
         <div class="slide" data-pos="${pos(ANSWERS, mine.v)}" role="group" aria-label="${L.slotWhen(w, i)}, your answer"><span class="knob"></span>${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
         ${who}
       </div>`;
     }).join('');
     if (!rows) return '';
-    return `<section class="section">
-      <div class="sec-head"><h2>${L.relLabel(w, now)}</h2><span class="muted">${L.rangeLabel(w)}</span></div>
+    // The weekend at a glance: a bar a slot, as tall as the share who are free.
+    const sky = n > 1 ? `<span class="sky" aria-hidden="true">${L.SLOTS.map((_, i) => {
+      const past = L.isPast(w, i, now), f = past ? 0 : L.roll(s, w, i).f.length;
+      return `<i class="${past ? 'past' : ''}${i === 1 || i === 3 ? ' gap' : ''}"><b data-k="b:${w}:${i}" data-fx="bar" style="height:${Math.round(f / n * 100)}%"></b></i>`;
+    }).join('')}</span>` : '';
+    return `<section class="section" data-k="s:${w}">
+      <div class="sec-head"><h2>${L.relLabel(w, now)}</h2><span class="sec-side"><span class="muted">${L.rangeLabel(w)}</span>${sky}</span></div>
       <div class="card">${rows}</div>
     </section>`;
   }
 
   function event(p) {
-    const s = G.state, by = L.member(s, p.by), mine = p.rsvp[G.me] || '';
+    const s = G.state, by = L.member(s, p.by), mine = p.rsvp[G.me] || '', now = new Date();
     const all = L.planSlots(p), oneDay = new Set(all.map(i => L.SLOTS[i].day)).size === 1;
-    // Someone who can only make part of it is named with the part.
-    const some = m => { const got = L.planPart(p, m.id); return got.length < all.length ? ` (${L.slotsName(got, oneDay)} only)` : ''; };
+    // Someone who can only make part of it has the part beside their name.
+    const some = (m, c) => { const got = L.planPart(p, m.id); return c !== 'out' && c !== 'none' && got.length < all.length ? L.slotsName(got, oneDay) : ''; };
     const groups = REPLIES.map(r => [r[0], r[1], s.members.filter(m => p.rsvp[m.id] === r[0])]);
-    const list = g => g[0] === 'out' ? people(g[2]) : people(g[2].map(m => ({ id: m.id, name: (m.id === G.me ? 'you' : m.name) + some(m) })), 6, true);
-    const whoLine = groups.filter(g => g[2].length).map(g => `${g[1]}: ${list(g)}.`).join(' ') || 'No answers yet.';
     const sure = ui.confirm === 'scrap:' + p.id;
     const got = L.planPart(p, G.me);
     const part = all.length > 1 && (mine === 'in' || mine === 'maybe') ? `<div class="ev-part${all.length > 2 ? ' long' : ''}"><span>You can make</span><div class="seg" role="group" aria-label="The parts you can make">${all.map(i => `<button data-act="part" data-p="${p.id}" data-i="${i}" aria-pressed="${got.includes(i)}">${oneDay ? L.SLOTS[i].part[0].toUpperCase() + L.SLOTS[i].part.slice(1) : L.slotName(i)}</button>`).join('')}</div></div>` : '';
-    return `<div class="card ev">
-      <div><div class="ev-when">${L.planWhen(p)}</div><div class="ev-title">${esc(p.text)}</div></div>
+    const a = L.slotDate(p.w, all[0]), b = L.slotDate(p.w, all[all.length - 1]), span = a.getTime() !== b.getTime();
+    const month = d => d.toLocaleDateString('en-AU', { month: 'short' });
+    const date = `<div class="ev-date${span ? ' wide' : ''}${L.key(a) === L.key(now) ? ' now' : ''}" aria-hidden="true"><b>${a.getDate()}${span ? `–${b.getDate()}` : ''}</b><span>${month(b)}</span></div>`;
+    return `<article class="card ev" data-k="e:${p.id}">
+      <div class="ev-top">${date}
+        <div><div class="ev-title">${esc(p.text)}</div><div class="ev-when"><span class="vh">${L.planWhen(p)}. </span><span aria-hidden="true">${L.slotsName(all)}</span>${by ? ` · by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</div></div>
+        ${p.by === G.me || !by ? `<button class="link quiet${sure ? ' danger' : ''}" data-act="scrap" data-p="${p.id}">${sure ? 'Delete?' : 'Delete'}</button>` : ''}
+      </div>
+      <div class="ev-tear"></div>
       <div class="slide" data-pos="${pos(REPLIES, mine)}" role="group" aria-label="Your answer"><span class="knob"></span>${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
       ${part}
-      <div class="ev-who">${whoLine}</div>
-      <div class="ev-foot"><span>${by ? `Posted by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</span>${p.by === G.me || !by ? `<button class="link quiet" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to delete' : 'Delete'}</button>` : ''}</div>
-    </div>`;
+      ${roster(p.id, [...groups, ['none', 'No answer', s.members.filter(m => !p.rsvp[m.id])]], some)}
+    </article>`;
   }
 
   function renderSheet(quiet) {
@@ -737,8 +846,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const typed = {}, at = document.activeElement;
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { if (el.value !== el.defaultValue) typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
-    const inside = !!at && sheetRoot.contains(at);
-    sheetRoot.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
+    const inside = !!at && sheetRoot.contains(at), up = sheetRoot.firstChild ? '' : ' rise';
+    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -842,6 +951,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const el = app.querySelector(`[data-act="who"][data-w="${d.w}"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true });
     },
     more() { ui.more = true; render(); },
+    // A big group's names, unfolded and folded away again.
+    all(d) {
+      const k = 'r:' + d.key; ui.open[k] = !ui.open[k]; render();
+      const el = app.querySelector(`[data-act="all"][data-key="${d.key}"]`); if (el) el.focus({ preventScroll: true });
+    },
     // From the top it starts on this weekend; from a slot, on that slot.
     event(d) {
       const now = new Date(), w = d.w || L.weeks(now, 2).find(x => openSlots(x, now).length);
