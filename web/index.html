@@ -247,13 +247,19 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 /* First run: one question a screen. The screen fills the phone so the way on,
    and the small print, sit at the foot. */
 .onb { display: flex; flex-direction: column; gap: 24px; min-height: calc(100dvh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-.onb .lead { max-width: 16ch; font-size: 1.9rem; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
+.onb .lead { max-width: 16ch; margin: 0 auto; text-align: center; font-size: 1.9rem; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
 .onb .ask { font-size: 1.55rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
 .onb form.stack { gap: 14px; }
 .onb form.stack input { min-height: 54px; font-size: 18px; }
 .onb .btn { min-height: 52px; font-size: 1rem; }
 .onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .onb .groups-acts { grid-template-columns: 1fr 1fr; }
+/* A step sits in the middle, a little high so the keyboard clears it. */
+.onb .mid { flex: 1; display: flex; flex-direction: column; gap: 24px; text-align: center; }
+.onb .mid::before { content: ''; flex: 1; }
+.onb .mid::after { content: ''; flex: 2.5; }
+.onb .mid.even::after { flex: 1; }
+.onb .mid input { text-align: center; }
 .bad { color: var(--neg); font-size: .86rem; }
 /* A join code: four letters, typed into one field drawn as four boxes. */
 .code-in { position: relative; display: block; }
@@ -279,15 +285,16 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 @keyframes wk-in { from { opacity: 0; transform: scaleX(.4); } }
 
 /* Two tall tiles share the screen, so the choice is the page. */
-.pick { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(150px, 250px); align-content: start; gap: 12px; }
-.pick button { appearance: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 0 14px; padding: 20px 18px; text-align: left; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; }
+.pick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.pick button { appearance: none; display: grid; justify-items: center; gap: 4px; padding: 28px 18px 26px; text-align: center; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; }
 .pick button:active { background: color-mix(in srgb, var(--ink) 6%, var(--surface)); }
-.pick .ic { grid-area: 1 / 1; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
+.pick .ic { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
 .pick .ic svg { width: 24px; height: 24px; }
-.pick .ic + span { grid-area: 2 / 1 / 3 / -1; align-self: end; }
+/* Join shows what a code looks like. */
+.pick .eg { display: flex; align-items: center; gap: 6px; height: 54px; margin-bottom: 12px; }
+.pick .eg i { display: grid; place-items: center; width: 36px; height: 44px; font-style: normal; font-size: 1.1rem; font-weight: 600; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 6px; background: color-mix(in srgb, var(--ink) 4%, var(--surface)); }
 .pick strong { display: block; font-size: 1.4rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
-.pick small { display: block; margin-top: 4px; font-size: .95rem; color: var(--muted); }
-.pick > button > svg { grid-area: 1 / 2; align-self: center; color: var(--muted); }
+.pick small { display: block; font-size: .95rem; color: var(--muted); }
 
 /* A group on the home screen: its weekend at a glance. */
 .gcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
@@ -537,6 +544,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // The iPhone app carries its own way to the terms and to us.
   const legal = () => shell ? `<div class="legal"><p>By continuing you agree to the terms.</p><nav aria-label="Legal"><a href="https://teloone.au/apps/muster/terms/">Terms</a><a href="https://teloone.au/apps/muster/privacy/">Privacy</a><a href="mailto:support@teloone.au?subject=Muster">Contact</a></nav></div>` : '';
 
+  // Every first-run screen ends with the way to the terms and to us.
+  const links = () => `<div class="legal"><nav aria-label="Legal"><a href="https://teloone.au/apps/muster/terms/">Terms</a><a href="https://teloone.au/apps/muster/privacy/">Privacy</a><a href="mailto:support@teloone.au?subject=Muster">Contact</a></nav></div>`;
+
   // Home asks one thing a screen. Each step is an entry in the phone's history,
   // so back, and a swipe from the edge, go to the step before.
   const step = () => (history.state && history.state.step) || '';
@@ -555,7 +565,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     </div>`;
 
   const PLUS = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>';
-  const LINK = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5a3.2 3.2 0 0 0 4.5 0l2.6-2.6a3.2 3.2 0 0 0-4.5-4.5l-.9.9M11.5 8.5a3.2 3.2 0 0 0-4.5 0l-2.6 2.6a3.2 3.2 0 0 0 4.5 4.5l.9-.9"/></svg>';
   // A group as the phone last saw it: this weekend, a bar a person for each slot.
   function groupCard(s) {
     const c = ls.get('muster.g.' + s.id, null), st = c && c.state;
@@ -580,36 +589,36 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     welcome: () => `<div class="onb">${bar()}
       <h1 class="lead">See when everyone's free this weekend.</h1>
       ${weekend()}
-      <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${legal()}</div></div>`,
+      <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${legal() || links()}</div></div>`,
     groups: () => `<div class="onb">${bar()}
       <h1 class="ask">Your groups</h1>
       <nav class="gcards" aria-label="Your groups">${saved.map(groupCard).join('')}</nav>
       <div class="end groups-acts"><button class="btn" data-act="step" data-s="create">Start a group</button><button class="btn ghost" data-act="step" data-s="link">Join a group</button></div></div>`,
-    name: () => `<div class="onb">${stepBar()}
+    name: () => `<div class="onb">${stepBar()}<div class="mid">
       <h1 class="ask">What's your name?</h1>
       <form class="stack" data-form="name" autocomplete="off">
         <input type="text" name="me" maxlength="24" aria-label="Your name" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="next">
         <button class="btn wide">Continue</button>
-      </form></div>`,
-    choose: () => `<div class="onb">${stepBar()}
+      </form></div>${links()}</div>`,
+    choose: () => `<div class="onb">${stepBar()}<div class="mid even">
       <h1 class="ask">Start a group, or join one?</h1>
       <div class="pick">
-        <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><span><strong>Start a group</strong><small>Then send your friends the code.</small></span>${chev()}</button>
-        <button data-act="step" data-s="link"><span class="ic">${LINK}</span><span><strong>Join a group</strong><small>With a code from a friend.</small></span>${chev()}</button>
-      </div></div>`,
-    create: () => `<div class="onb">${stepBar()}
+        <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><strong>Start a group</strong><small>Then send your friends the code.</small></button>
+        <button data-act="step" data-s="link"><span class="eg" aria-hidden="true"><i>W</i><i>X</i><i>Y</i><i>Z</i></span><strong>Join a group</strong><small>With a code from a friend.</small></button>
+      </div></div>${links()}</div>`,
+    create: () => `<div class="onb">${stepBar()}<div class="mid">
       <h1 class="ask">Name your group</h1>
       <form class="stack" data-form="create" autocomplete="off">
         <input type="text" name="group" maxlength="40" aria-label="Group name" placeholder="The Usual Suspects" required autocapitalize="words" enterkeyhint="go">
         <button class="btn wide">Start group</button>
-      </form></div>`,
-    link: () => `<div class="onb">${stepBar()}
+      </form></div>${links()}</div>`,
+    link: () => `<div class="onb">${stepBar()}<div class="mid">
       <h1 class="ask">Enter the group's code</h1>
       <form class="stack" data-form="link" autocomplete="off">
         <label class="code-in"><input type="text" name="link" aria-label="Group code, four letters" value="${esc(ui.code || '')}" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">${cells(ui.code || '')}</label>
         ${ui.bad ? `<p class="bad" role="alert">${BAD[ui.bad]}</p>` : ''}
         <button class="btn wide">Join</button>
-      </form></div>`,
+      </form></div>${links()}</div>`,
   };
   const cells = v => `<span class="cells" aria-hidden="true">${[0, 1, 2, 3].map(k => `<i${k === v.length ? ' class="at"' : ''}>${v[k] || ''}</i>`).join('')}</span>`;
   const BAD = { none: 'No group has that code. Codes last a week.', many: "Too many tries. Wait an hour, or open the group's link.", net: "Can't reach Muster. Check your connection." };
@@ -635,7 +644,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
         ${ui.dup ? `<p class="hint">Someone called ${esc(ui.dupName)} is already in this group. If that's you, tap your name below. If not, join anyway.</p>` : ''}
       </form>
-      ${names}${legal()}`;
+      ${names}${legal() || links()}`;
   }
 
   // A list of people by name, with you first and called "you".
