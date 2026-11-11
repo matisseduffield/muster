@@ -10,7 +10,7 @@ enum App {
         start: "/",
         background: UIColor(named: "Page") ?? .systemBackground,
         // A group's address has no file behind it: the one page draws it.
-        isAppPath: { $0.hasPrefix("/g/") }
+        isAppPath: { $0.hasPrefix("/g/") || $0.hasPrefix("/j/") }
     )
 
     private static var unsent = false
@@ -51,8 +51,14 @@ enum App {
     }
 
     /// A group's link: https://muster.teloone.au/g/<id>, or muster://g/<id>.
+    /// A join code's link: https://muster.teloone.au/j/<code>.
     static func opened(link: URL) {
         let path = link.scheme == "muster" ? "/" + (link.host ?? "") + link.path : link.path
+        if path.hasPrefix("/j/") {
+            let code = path.range(of: "^/j/[A-Za-z]{4}/?$", options: .regularExpression) != nil
+            Shell.current?.show(code ? path : "/g/-")
+            return
+        }
         guard path.hasPrefix("/g/") else { return }
         // A link that's the wrong length opens the page that says so.
         let whole = path.range(of: "^/g/[A-Za-z0-9_-]{22}/?$", options: .regularExpression) != nil

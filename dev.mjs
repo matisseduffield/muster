@@ -63,7 +63,7 @@ http.createServer(async (req, res) => {
     return res.end(Buffer.from(await out.arrayBuffer()));
   }
   let file = url.pathname.replace(/^\/+/, '');
-  if (!file || /^g\/[^/]+$/.test(file)) file = 'index.html';
+  if (!file || /^[gj]\/[^/]+$/.test(file)) file = 'index.html';
   const full = path.join(here, 'web', file);
   if (!full.startsWith(path.join(here, 'web')) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
   res.writeHead(200, { 'Content-Type': TYPES[file.split('.').pop()] || 'application/octet-stream', 'Cache-Control': 'no-store' });

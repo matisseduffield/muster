@@ -2,12 +2,19 @@
 //
 //   GET  /api/g/:id       the whole group: { group, members, marks, plans }
 //   POST /api/g/:id/ops   apply changes { ops: [...] }, answer with the group
-//   GET  /, /g/:id, ...   the web app, served from the public muster-releases repo
+//   POST /api/g/:id/code  the group's join code: { code, until }
+//   GET  /api/code/:code  the group a join code leads to: { id }
+//   GET  /, /g/:id, /j/:code, ...   the web app, served from the public muster-releases repo
 //   scheduled             the daily Cron Trigger: forget weekends long past
 //
 // There are no accounts: a group's 22-character random id is its link, and
 // anyone holding it can read and change the group. Responses carry the group's
 // version as an ETag, so polling an unchanged group costs a 304.
+//
+// A join code is four capital letters that lead to a group for a week, so a
+// group can be read out or typed. One group has one live code; asking again
+// returns it and gives it another week. Codes are short, so wrong guesses are
+// counted per network address (kept only as a scrambled stub) and cut off.
 //
 // Ops (anything malformed is skipped, so one bad change can't jam a phone's queue):
 //   { t: 'group', name }                      start the group, or rename it
@@ -30,6 +37,12 @@ const DAY = 24 * 60 * 60 * 1000;
 const SHOW_DAYS = 10;
 const KEEP_DAYS = 35;
 const AHEAD_DAYS = 400;
+// Join codes: no vowels, so they never spell anything.
+const LETTERS = 'BCDFGHJKLMNPQRSTVWXZ';
+const CODE = /^[BCDFGHJKLMNPQRSTVWXZ]{4}$/;
+const CODE_DAYS = 7;
+const GUESSES = 10;
+const HOUR = 60 * 60 * 1000;
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -43,7 +56,7 @@ const PRIVATE = { 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex', '
 
 // The iPhone app, so links to groups open in it. Apple reads this once per install.
 const APPLE_LINKS = {
-  applinks: { details: [{ appIDs: ['4CN49LRZ9H.com.matisseduffield.muster'], components: [{ '/': '/g/*' }] }] },
+  applinks: { details: [{ appIDs: ['4CN49LRZ9H.com.matisseduffield.muster'], components: [{ '/': '/g/*' }, { '/': '/j/*' }] }] },
 };
 
 const json = (body, status = 200, headers = {}) =>
@@ -56,14 +69,17 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     try {
-      const api = url.pathname.match(/^\/api\/g\/([^/]+)(\/ops)?$/);
+      const api = url.pathname.match(/^\/api\/g\/([^/]+)(\/ops|\/code)?$/);
       if (api) {
         const id = api[1];
         if (!ID.test(id)) return fail(404, 'No such group');
         if (request.method === 'GET' && !api[2]) return getGroup(env, id, request);
-        if (request.method === 'POST' && api[2]) return applyOps(env, id, request);
+        if (request.method === 'POST' && api[2] === '/ops') return applyOps(env, id, request);
+        if (request.method === 'POST' && api[2] === '/code') return groupCode(env, id);
         return fail(405, 'Not allowed');
       }
+      const code = url.pathname.match(/^\/api\/code\/([^/]+)$/);
+      if (code) return request.method === 'GET' ? findCode(env, code[1], request) : fail(405, 'Not allowed');
       if (url.pathname === '/.well-known/apple-app-site-association') return json(APPLE_LINKS, 200, { 'Cache-Control': 'public, max-age=3600' });
       if (request.method === 'GET') return serveWeb(url.pathname, url.search);
       return fail(405, 'Not allowed');
@@ -77,6 +93,8 @@ export default {
       env.DB.prepare('DELETE FROM marks WHERE week < ?').bind(old),
       env.DB.prepare('DELETE FROM rsvps WHERE plan_id IN (SELECT id FROM plans WHERE week < ?)').bind(old),
       env.DB.prepare('DELETE FROM plans WHERE week < ?').bind(old),
+      env.DB.prepare('DELETE FROM codes WHERE expires <= ?').bind(Date.now()),
+      env.DB.prepare('DELETE FROM guesses WHERE since <= ?').bind(Date.now() - HOUR),
     ]);
   },
 };
@@ -115,6 +133,61 @@ async function getGroup(env, id, request) {
   const group = await readGroup(env, id, Date.now());
   if (!group) return fail(404, 'No such group');
   return json(group, 200, { ETag: `"${group.group.version}"` });
+}
+
+function randomCode() {
+  let code = '';
+  while (code.length < 4) {
+    // Bytes past 239 are thrown back, so every letter is as likely as the next.
+    for (const b of crypto.getRandomValues(new Uint8Array(8))) if (b < 240 && code.length < 4) code += LETTERS[b % 20];
+  }
+  return code;
+}
+
+// The group's code: the one it has, with another week on it, or a new one.
+async function groupCode(env, id) {
+  const db = env.DB, now = Date.now(), until = now + CODE_DAYS * DAY;
+  if (!await db.prepare('SELECT id FROM groups WHERE id = ?').bind(id).first()) return fail(404, 'No such group');
+  const have = await db.prepare('SELECT code FROM codes WHERE group_id = ? AND expires > ? ORDER BY expires DESC').bind(id, now).first();
+  if (have) {
+    await db.batch([db.prepare('UPDATE codes SET expires = ? WHERE code = ?').bind(until, have.code)]);
+    return json({ code: have.code, until });
+  }
+  for (let k = 0; k < 8; k++) {
+    const code = randomCode();
+    // A code another group still holds is left alone; one that has run out is taken over.
+    const [made] = await db.batch([db.prepare(
+      'INSERT INTO codes (code, group_id, expires) VALUES (?, ?, ?) ' +
+      'ON CONFLICT(code) DO UPDATE SET group_id = excluded.group_id, expires = excluded.expires WHERE codes.expires <= ?'
+    ).bind(code, id, until, now)]);
+    if (made.meta && made.meta.changes) return json({ code, until });
+  }
+  return fail(503, 'Try again');
+}
+
+// Who is asking, without keeping their address: a stub of its hash. An IPv6
+// address counts by its network, since one phone can hold a great many.
+async function asker(request) {
+  let ip = request.headers.get('CF-Connecting-IP') || 'local';
+  if (ip.includes(':')) ip = ip.split(':').slice(0, 4).join(':');
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('muster ' + ip));
+  return [...new Uint8Array(hash)].slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function findCode(env, raw, request) {
+  const db = env.DB, now = Date.now();
+  const who = await asker(request);
+  const tries = await db.prepare('SELECT n FROM guesses WHERE who = ? AND since > ?').bind(who, now - HOUR).first();
+  if (tries && tries.n >= GUESSES) return fail(429, 'Too many tries');
+  const code = String(raw).toUpperCase();
+  const hit = CODE.test(code) ? await db.prepare('SELECT group_id FROM codes WHERE code = ? AND expires > ?').bind(code, now).first() : null;
+  if (hit) return json({ id: hit.group_id });
+  // A miss counts; the count starts again an hour after its first.
+  await db.batch([db.prepare(
+    'INSERT INTO guesses (who, n, since) VALUES (?, 1, ?) ON CONFLICT(who) DO UPDATE SET ' +
+    'n = CASE WHEN guesses.since <= ? THEN 1 ELSE guesses.n + 1 END, since = CASE WHEN guesses.since <= ? THEN excluded.since ELSE guesses.since END'
+  ).bind(who, now, now - HOUR, now - HOUR)]);
+  return fail(404, 'No such code');
 }
 
 // Letters, digits and ordinary punctuation on one line; nothing a page could trip on later.
@@ -231,7 +304,7 @@ async function applyOps(env, id, request) {
 const TYPES = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', json: 'application/json', woff2: 'font/woff2', svg: 'image/svg+xml', png: 'image/png' };
 async function serveWeb(path, search = '') {
   let file = path.replace(/^\/+/, '');
-  if (!file || /^g\/[^/]+$/.test(file)) file = 'index.html';
+  if (!file || /^[gj]\/[^/]+$/.test(file)) file = 'index.html';
   if (!/^[a-z0-9-]+(\/[a-z0-9-]+)*\.(html|js|json|woff2|svg|png)$/.test(file)) return fail(404, 'Not found');
   const version = /^\?v=\d+$/.test(search) ? search : '';
   const res = await fetch(WEB + file + version, { cf: { cacheTtl: 300, cacheEverything: true } });

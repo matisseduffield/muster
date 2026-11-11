@@ -2,8 +2,8 @@
 <html lang="en-AU">
 <head>
 <meta charset="utf-8">
-<!-- A group link is /g/<id>, but the files sit at the top: without this, lib.js and the fonts would be looked for under /g/. -->
-<script>if (location.pathname.startsWith('/g/')) document.write('<base href="/">');</script>
+<!-- A group link is /g/<id> and a code's is /j/<code>, but the files sit at the top: without this, lib.js and the fonts would be looked for under /g/. -->
+<script>if (/^\/[gj]\//.test(location.pathname)) document.write('<base href="/">');</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
@@ -255,6 +255,14 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .onb .groups-acts { grid-template-columns: 1fr 1fr; }
 .bad { color: var(--neg); font-size: .86rem; }
+/* A join code: four letters, typed into one field drawn as four boxes. */
+.code-in { position: relative; display: block; }
+.code-in input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 18px; }
+.cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.cells i { display: grid; place-items: center; height: 72px; font-style: normal; font-size: 2rem; font-weight: 600; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; }
+.code-in:focus-within .cells i.at { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.btn:disabled { opacity: .4; }
+.invite-foot { display: flex; justify-content: center; }
 
 /* A weekend in miniature: a bar a friend for each slot, and the slot that suits everyone. */
 .wk { display: grid; gap: 14px; padding: 16px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
@@ -455,9 +463,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function route() {
     const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
+    const j = location.pathname.match(/^\/j\/([A-Za-z]{4})\/?$/);
     ui = { open: {}, more: false, sheet: null, confirm: null };
+    // A join code's short link: find its group, then carry on as if its link had been opened.
+    if (j) { G = { id: '', code: j[1].toUpperCase(), me: null, state: null, queue: [] }; seek(); }
     // A group link that's the wrong length: say so, rather than show the home screen.
-    if (!m && location.pathname.startsWith('/g/')) G = { id: '', me: null, state: null, queue: [], gone: true };
+    else if (!m && /^\/[gj]\//.test(location.pathname)) G = { id: '', me: null, state: null, queue: [], gone: true, why: location.pathname[1] === 'j' ? 'none' : '' };
     else if (!m) { G = null; }
     else {
       const id = m[1], s = saved.find(x => x.id === id), c = ls.get('muster.g.' + id, null);
@@ -470,13 +481,28 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     renderSheet();
     window.scrollTo(0, 0);
   }
+  // The group a join code leads to.
+  async function find(code) {
+    try {
+      const res = await fetch(`${API}/api/code/${code}`, { cache: 'no-store' });
+      if (res.ok) return { id: (await res.json()).id };
+      return { err: res.status === 404 ? 'none' : res.status === 429 ? 'many' : 'net' };
+    } catch (e) { return { err: 'net' }; }
+  }
+  async function seek() {
+    const g = G, r = await find(g.code);
+    if (g !== G) return;
+    if (r.id) { history.replaceState(null, '', '/g/' + r.id); path = location.pathname; return route(); }
+    if (r.err === 'net') g.failed = true; else { g.gone = true; g.why = r.err; }
+    render();
+  }
   let path = location.pathname;
   function go(to) { history.pushState(null, '', to); path = location.pathname; route(); }
   // Back closes an open sheet and stays on the board.
   window.addEventListener('popstate', () => {
     if (location.pathname === path) {
       if (ui.sheet) { ui.sheet = null; ui.confirm = null; renderSheet(); }
-      else if (!G) { ui.bad = false; render(); window.scrollTo(0, 0); }
+      else if (!G) { ui.bad = false; ui.code = ''; render(); window.scrollTo(0, 0); }
       return;
     }
     path = location.pathname; route();
@@ -517,7 +543,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   let after = '';
   function toStep(s) {
     history.pushState({ step: s }, '', '/'); path = location.pathname;
-    ui.bad = false;
+    ui.bad = false; ui.code = '';
     render(); window.scrollTo(0, 0);
     const el = app.querySelector('.onb form input'); if (el) el.focus();
   }
@@ -568,8 +594,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     choose: () => `<div class="onb">${stepBar()}
       <h1 class="ask">Start a group, or join one?</h1>
       <div class="pick">
-        <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><span><strong>Start a group</strong><small>Then send your friends the link.</small></span>${chev()}</button>
-        <button data-act="step" data-s="link"><span class="ic">${LINK}</span><span><strong>Join a group</strong><small>With a link a friend sent you.</small></span>${chev()}</button>
+        <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><span><strong>Start a group</strong><small>Then send your friends the code.</small></span>${chev()}</button>
+        <button data-act="step" data-s="link"><span class="ic">${LINK}</span><span><strong>Join a group</strong><small>With a code from a friend.</small></span>${chev()}</button>
       </div></div>`,
     create: () => `<div class="onb">${stepBar()}
       <h1 class="ask">Name your group</h1>
@@ -578,17 +604,24 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <button class="btn wide">Start group</button>
       </form></div>`,
     link: () => `<div class="onb">${stepBar()}
-      <h1 class="ask">Paste the group's link</h1>
+      <h1 class="ask">Enter the group's code</h1>
       <form class="stack" data-form="link" autocomplete="off">
-        <input type="text" name="link" aria-label="Group link" placeholder="muster.teloone.au/g/..." required autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="url" enterkeyhint="go">
-        ${ui.bad ? `<p class="bad" role="alert">That isn't a Muster group link. Paste the whole link.</p>` : ''}
+        <label class="code-in"><input type="text" name="link" aria-label="Group code, four letters" value="${esc(ui.code || '')}" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">${cells(ui.code || '')}</label>
+        ${ui.bad ? `<p class="bad" role="alert">${BAD[ui.bad]}</p>` : ''}
         <button class="btn wide">Join</button>
       </form></div>`,
   };
+  const cells = v => `<span class="cells" aria-hidden="true">${[0, 1, 2, 3].map(k => `<i${k === v.length ? ' class="at"' : ''}>${v[k] || ''}</i>`).join('')}</span>`;
+  const BAD = { none: 'No group has that code. Codes last a week.', many: "Too many tries. Wait an hour, or open the group's link.", net: "Can't reach Muster. Check your connection." };
   const home = () => (steps[step()] || (saved.length ? steps.groups : steps.welcome))();
 
   const loading = () => `${bar()}<div class="lone"><p>Fetching the group.</p></div>`;
-  const gone = () => `${bar()}<div class="lone"><h1>This link doesn't lead to a group.</h1><p>Check it's the whole link, or ask whoever sent it.</p><a class="btn" href="/" data-nav>Start a group</a></div>`;
+  const gone = () => {
+    const [h, p] = G.why === 'none' ? ["That code doesn't lead to a group.", 'Codes last a week. Ask for a new one.']
+      : G.why === 'many' ? ['Too many tries.', "Wait an hour, or open the group's link."]
+      : ["This link doesn't lead to a group.", "Check it's the whole link, or ask whoever sent it."];
+    return `${bar()}<div class="lone"><h1>${h}</h1><p>${p}</p><a class="btn" href="/" data-nav>Start a group</a></div>`;
+  };
   const failed = () => `${bar()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
 
   function join() {
@@ -679,7 +712,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function renderSheet(quiet) {
     const sh = ui.sheet;
     if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
-    const html = sh.kind === 'event' ? eventSheet(sh) : settingsSheet();
+    const html = sh.kind === 'event' ? eventSheet(sh) : sh.kind === 'invite' ? inviteSheet(sh) : settingsSheet();
     if (quiet && html === sheetDrawn) return;
     sheetDrawn = html;
     const y = sheetRoot.querySelector('.sheet') ? sheetRoot.querySelector('.sheet').scrollTop : 0;
@@ -706,6 +739,19 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   }
   function closeSheet() { ui.sheet = null; ui.confirm = null; renderSheet(); if (history.state && history.state.sheet) history.back(); }
   const sheetHead = (t, shut = 'Done') => `<div class="sheet-head"><h2 id="sheet-title">${t}</h2><button class="link" data-act="close">${shut}</button></div>`;
+
+  // The group's code, large enough to read out across a room.
+  function inviteSheet(sh) {
+    if (sh.fail) return `${sheetHead('Invite')}
+      <div class="sheet-body"><p class="hint">Can't get a code right now. Send the link instead.</p><button class="btn wide" data-act="shareLink">Share link</button></div>`;
+    return `${sheetHead('Invite')}
+      <div class="sheet-body">
+        <div ${sh.code ? `role="img" aria-label="Join code ${sh.code.split('').join(' ')}"` : 'aria-busy="true"'}>${cells(sh.code || '').replace(' class="at"', '')}</div>
+        <p class="hint">Friends tap Join a group and enter this code. It works for a week.</p>
+        <button class="btn wide" data-act="shareCode"${sh.code ? '' : ' disabled'}>Share code</button>
+        <div class="invite-foot"><button class="link quiet" data-act="shareLink">Share the link instead</button></div>
+      </div>`;
+  }
 
   function eventSheet(sh) {
     const now = new Date(), open = openSlots(sh.w, now);
@@ -757,8 +803,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   }
 
   // Hand a message and the group's link to the share sheet, or copy them.
-  async function send(text) {
-    const url = `${SITE}/g/${G.id}`;
+  async function send(text, url = `${SITE}/g/${G.id}`) {
     if (shell) return tell({ type: 'share', title: G.state.group.name, text: `${text}\n${url}` });
     const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied'); } catch (x) { toast("Couldn't copy the link."); } };
     if (!navigator.share) return copy();
@@ -801,8 +846,18 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     invite() {
       // A group started offline has no link to open until the server has it.
       if (!G.state.group.version) { sync(); return toast("Group not sent yet. Invite once you're online."); }
-      send(`${G.state.group.name}: mark when you're free`);
+      const g = G;
+      openSheet({ kind: 'invite', code: g.invite || '' });
+      // Asking gives the code another week, so it's asked for each time.
+      fetch(`${API}/api/g/${g.id}/code`, { method: 'POST' }).then(res => res.ok ? res.json() : null).catch(() => null).then(got => {
+        if (got && got.code) g.invite = got.code;
+        if (g !== G || !ui.sheet || ui.sheet.kind !== 'invite') return;
+        if (g.invite) ui.sheet.code = g.invite; else ui.sheet.fail = true;
+        renderSheet(true);
+      });
     },
+    shareCode() { if (ui.sheet && ui.sheet.code) send(`Join ${G.state.group.name} on Muster with the code ${ui.sheet.code}`, `${SITE}/j/${ui.sheet.code}`); },
+    shareLink() { send(`${G.state.group.name}: mark when you're free`); },
     settings() { openSheet({ kind: 'settings' }); },
     close() { closeSheet(); },
     remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
@@ -822,7 +877,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (!remindOn()) return tell({ type: remindBlocked ? 'openSettings' : 'askNotifications' });
       ls.set('muster.remind', false); plan(); renderSheet();
     },
-    retry() { G.failed = false; render(); sync(); },
+    retry() { G.failed = false; render(); if (G.code) seek(); else sync(); },
     // Starting a group needs your name first.
     step(d) {
       if (d.s === 'create' && !ls.get('muster.name', '')) { after = 'create'; return toStep('name'); }
@@ -840,11 +895,20 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const next = after || 'choose'; after = '';
       toStep(next);
     },
-    // The whole link, or just the end of it.
-    link(f) {
-      const m = f.link.value.trim().match(/(?:^|\/g\/)([A-Za-z0-9_-]{22})\/?(?:[?#].*)?$/);
-      if (!m) { ui.bad = true; render(); const el = app.querySelector('input[name=link]'); if (el) el.focus(); return; }
-      go('/g/' + m[1]);
+    // Four letters. A pasted group link still works.
+    async link(f) {
+      const raw = f.link.value.trim(), m = raw.match(/(?:^|\/g\/)([A-Za-z0-9_-]{22})\/?(?:[?#].*)?$/);
+      if (m) return go('/g/' + m[1]);
+      const code = raw.toUpperCase(), u = ui;
+      if (!/^[A-Z]{4}$/.test(code)) { f.link.focus(); return; }
+      if (u.seeking) return;
+      u.seeking = true;
+      const r = await find(code);
+      u.seeking = false;
+      if (u !== ui || step() !== 'link') return;
+      if (r.id) return go('/g/' + r.id);
+      ui.bad = r.err; ui.code = code; render();
+      const el = app.querySelector('input[name=link]'); if (el) el.focus();
     },
     create(f) {
       const name = clean(f.group.value, 40), mine = clean(ls.get('muster.name', ''), 24);
@@ -942,6 +1006,20 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     if (!f) return;
     e.preventDefault();
     forms[f.dataset.form](f.elements);
+  });
+  // The code field takes letters only, in capitals, and joins on the fourth.
+  document.addEventListener('input', e => {
+    const el = e.target;
+    if (!el.matches || !el.matches('.code-in input')) return;
+    const raw = el.value;
+    if (/\/g\/[A-Za-z0-9_-]{22}/.test(raw)) return forms.link(el.form.elements);
+    const j = raw.match(/\/j\/([A-Za-z]{4})/);
+    const v = (j ? j[1] : raw.replace(/[^A-Za-z]/g, '')).toUpperCase().slice(0, 4);
+    el.value = v;
+    ui.code = v; ui.bad = false; drawn = null;
+    const box = el.parentNode.querySelector('.cells'); if (box) box.outerHTML = cells(v);
+    const bad = el.form.querySelector('.bad'); if (bad) bad.remove();
+    if (v.length === 4) forms.link(el.form.elements);
   });
   // Picking another weekend for an event: its past slots can't be chosen.
   document.addEventListener('change', e => {

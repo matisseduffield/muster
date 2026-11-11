@@ -154,3 +154,65 @@ test('the daily clean-up forgets weekends long past', async () => {
   assert.deepEqual([n('marks'), n('plans'), n('rsvps')], [1, 0, 0]);
   assert.equal((await get()).body.marks[ME][W], 'f----');
 });
+
+// ---- join codes ----
+
+test('a group gets a four-letter code that leads back to it, and keeps it', async () => {
+  const { start, call } = await setup();
+  await start();
+  const made = await call('POST', `/api/g/${G}/code`);
+  assert.equal(made.status, 200);
+  assert.match(made.body.code, /^[BCDFGHJKLMNPQRSTVWXZ]{4}$/);
+  assert.ok(made.body.until > Date.now() + 6 * 24 * 60 * 60 * 1000);
+  assert.equal((await call('POST', `/api/g/${G}/code`)).body.code, made.body.code);
+  assert.deepEqual((await call('GET', `/api/code/${made.body.code}`)).body, { id: G });
+  assert.deepEqual((await call('GET', `/api/code/${made.body.code.toLowerCase()}`)).body, { id: G });
+});
+
+test('no code for a group that does not exist', async () => {
+  const { call } = await setup();
+  assert.equal((await call('POST', `/api/g/${G}/code`)).status, 404);
+});
+
+test('a code that has run out leads nowhere, and the group gets a new one', async () => {
+  const { start, call, env } = await setup();
+  await start();
+  const { code } = (await call('POST', `/api/g/${G}/code`)).body;
+  env.DB.raw.prepare('UPDATE codes SET expires = ?').run(Date.now() - 1);
+  assert.equal((await call('GET', `/api/code/${code}`)).status, 404);
+  assert.equal((await call('POST', `/api/g/${G}/code`)).status, 200);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM codes WHERE expires > ?').get(Date.now()).n, 1);
+});
+
+test('wrong guesses are cut off, and start again after an hour', async () => {
+  const { start, call, env } = await setup();
+  await start();
+  const { code } = (await call('POST', `/api/g/${G}/code`)).body;
+  const wrong = code === 'BBBB' ? 'CCCC' : 'BBBB';
+  for (let k = 0; k < 10; k++) assert.equal((await call('GET', `/api/code/${wrong}`)).status, 404);
+  assert.equal((await call('GET', `/api/code/${wrong}`)).status, 429);
+  assert.equal((await call('GET', `/api/code/${code}`)).status, 429);
+  // Someone else is not held up.
+  assert.equal((await call('GET', `/api/code/${code}`, { headers: { 'CF-Connecting-IP': '203.0.113.9' } })).status, 200);
+  env.DB.raw.prepare('UPDATE guesses SET since = ?').run(Date.now() - 61 * 60 * 1000);
+  assert.equal((await call('GET', `/api/code/${code}`)).status, 200);
+  assert.equal((await call('GET', `/api/code/${wrong}`)).status, 404);
+  assert.equal(env.DB.raw.prepare('SELECT n FROM guesses').get().n, 1);
+});
+
+test('rubbish in place of a code is a miss, not an error', async () => {
+  const { call } = await setup();
+  for (const bad of ['AEIO', 'BCD', 'BCDFG', '%27--', 'B1CD']) assert.equal((await call('GET', `/api/code/${bad}`)).status, 404);
+});
+
+test('the daily clean-up drops codes and guesses that have run out', async () => {
+  const { start, call, env, worker } = await setup();
+  await start();
+  await call('POST', `/api/g/${G}/code`);
+  await call('GET', '/api/code/BBBB');
+  env.DB.raw.prepare('UPDATE codes SET expires = 1').run();
+  env.DB.raw.prepare('UPDATE guesses SET since = 1').run();
+  await worker.scheduled({}, env);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM codes').get().n, 0);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM guesses').get().n, 0);
+});

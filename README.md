@@ -5,6 +5,9 @@ Who's free this weekend. A friend group marks Friday night, Saturday and Sunday
 
 - A group has a name and a private link (https://muster.teloone.au/g/…). Anyone
   with the link opens it in a browser, types their name and answers. No accounts.
+- Invite shows a join code: four capital letters, good for a week, renewed each
+  time Invite is opened. Friends enter it under Join a group, or open
+  https://muster.teloone.au/j/CODE. Wrong guesses are cut off at ten an hour.
 - Eight weekends ahead (four shown, the rest behind a link), five slots each.
   Each slot shows how many are free and a Free / Maybe / Busy answer; tap the
   slot for names. No answer is kept apart from busy.
@@ -28,6 +31,8 @@ Who's free this weekend. A friend group marks Friday night, Saturday and Sunday
 ## The server
 
 `GET /api/g/<id>` returns a group, with an ETag of its version (304 when unchanged).
+`POST /api/g/<id>/code` returns the group's join code, `GET /api/code/<code>` the
+group it leads to.
 `POST /api/g/<id>/ops` applies a list of changes and returns the group. A group's
 22-character id is its secret. A daily cron drops weekends more than 35 days old.
 
