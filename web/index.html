@@ -243,6 +243,59 @@ input::placeholder { color: var(--muted); opacity: .8; }
 .rows a svg { color: var(--muted); flex: none; }
 form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .names { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* First run: one question a screen. The screen fills the phone so the way on,
+   and the small print, sit at the foot. */
+.onb { display: flex; flex-direction: column; gap: 24px; min-height: calc(100dvh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+.onb .lead { max-width: 16ch; font-size: 1.9rem; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
+.onb .ask { font-size: 1.55rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
+.onb form.stack { gap: 14px; }
+.onb form.stack input { min-height: 54px; font-size: 18px; }
+.onb .btn { min-height: 52px; font-size: 1rem; }
+.onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.onb .groups-acts { grid-template-columns: 1fr 1fr; }
+.bad { color: var(--neg); font-size: .86rem; }
+
+/* A weekend in miniature: a bar a friend for each slot, and the slot that suits everyone. */
+.wk { display: grid; gap: 14px; padding: 16px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.wk-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.wk-col { display: grid; gap: 6px; padding: 10px 6px; border: 1.5px solid transparent; border-radius: 6px; }
+.wk-col.best { border-color: var(--ink); }
+.wk-col b { display: block; margin-bottom: 4px; font-size: .74rem; font-weight: 600; line-height: 1.25; text-align: center; }
+.wk-col b span { display: block; font-weight: 400; color: var(--muted); }
+.wk-col i { height: 16px; border-radius: 4px; background: var(--line); animation: wk-in .45s both; animation-delay: calc(var(--c) * 80ms + var(--r) * 40ms + 120ms); }
+.wk-col i.f { background: var(--pos); }
+.wk-col i.m { background: var(--mid); }
+.wk-say { display: flex; align-items: center; gap: 8px; padding: 0 6px; font-size: .9rem; font-weight: 600; }
+.wk-say::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); }
+@keyframes wk-in { from { opacity: 0; transform: scaleX(.4); } }
+
+/* Two tall tiles share the screen, so the choice is the page. */
+.pick { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: minmax(150px, 250px); align-content: start; gap: 12px; }
+.pick button { appearance: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr; gap: 0 14px; padding: 20px 18px; text-align: left; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; }
+.pick button:active { background: color-mix(in srgb, var(--ink) 6%, var(--surface)); }
+.pick .ic { grid-area: 1 / 1; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
+.pick .ic svg { width: 24px; height: 24px; }
+.pick .ic + span { grid-area: 2 / 1 / 3 / -1; align-self: end; }
+.pick strong { display: block; font-size: 1.4rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
+.pick small { display: block; margin-top: 4px; font-size: .95rem; color: var(--muted); }
+.pick > button > svg { grid-area: 1 / 2; align-self: center; color: var(--muted); }
+
+/* A group on the home screen: its weekend at a glance. */
+.gcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.gcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; color: var(--ink); }
+.gcard:active { background: color-mix(in srgb, var(--ink) 5%, var(--surface)); }
+.gcard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 6px; }
+.gcard-head strong { display: block; font-size: 1.15rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcard-head small { display: block; font-size: .84rem; color: var(--muted); }
+.gcard-head svg { flex: none; color: var(--muted); }
+.gcard .wk-col i { height: 10px; border-radius: 3px; animation: none; }
+.gcard .wk-say.none { font-weight: 400; color: var(--muted); }
+.gcard .wk-say.none::before { background: var(--line-strong); }
+
+.legal { margin-top: 4px; text-align: center; font-size: .8rem; color: var(--muted); }
+.legal nav { display: flex; justify-content: center; gap: 28px; }
+.legal a { padding: 10px 8px; font-size: .84rem; text-decoration: none; }
 .lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
 .lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
 .lone p { color: var(--muted); }
@@ -406,7 +459,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function go(to) { history.pushState(null, '', to); path = location.pathname; route(); }
   // Back closes an open sheet and stays on the board.
   window.addEventListener('popstate', () => {
-    if (location.pathname === path) { if (ui.sheet) { ui.sheet = null; ui.confirm = null; renderSheet(); } return; }
+    if (location.pathname === path) {
+      if (ui.sheet) { ui.sheet = null; ui.confirm = null; renderSheet(); }
+      else if (!G) { ui.bad = false; render(); window.scrollTo(0, 0); }
+      return;
+    }
     path = location.pathname; route();
   });
 
@@ -434,24 +491,83 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a></header>`;
 
   // The iPhone app carries its own way to the terms and to us.
-  const legal = () => shell ? `<p class="hint">Starting or joining a group means you agree to the <a href="https://teloone.au/apps/muster/terms/">terms</a>. <a href="https://teloone.au/apps/muster/privacy/">Privacy</a>. <a href="mailto:support@teloone.au?subject=Muster">Contact</a>.</p>` : '';
+  const legal = () => shell ? `<div class="legal"><p>By continuing you agree to the terms.</p><nav aria-label="Legal"><a href="https://teloone.au/apps/muster/terms/">Terms</a><a href="https://teloone.au/apps/muster/privacy/">Privacy</a><a href="mailto:support@teloone.au?subject=Muster">Contact</a></nav></div>` : '';
 
-  function home() {
-    const list = saved.length ? `<section class="section"><div class="sec-head"><h2>Your groups</h2></div><nav class="rows">${saved.map(s => `<a href="/g/${s.id}" data-nav><span>${esc(s.name || 'Group')}</span>${chev()}</a>`).join('')}</nav></section>` : '';
-    return `
-      ${bar()}
-      <div><h1 class="lead">See when everyone's free this weekend.</h1><p>Each person marks their nights and days. Post an event and the group answers going, maybe or no.</p></div>
-      ${list}
-      <section class="section">
-        <div class="sec-head"><h2>${saved.length ? 'Start another group' : 'Start a group'}</h2></div>
-        <form class="stack" data-form="create" autocomplete="off">
-          <label class="field"><span class="field-label">Group name</span><input type="text" name="group" maxlength="40" placeholder="The Usual Suspects" required enterkeyhint="next"></label>
-          <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required enterkeyhint="done"></label>
-          <button class="btn wide">Start</button>
-        </form>
-        <p class="hint">No accounts. Anyone with the group's link can see it and answer, so only send it to the group.</p>
-      </section>${legal()}`;
+  // Home asks one thing a screen. Each step is an entry in the phone's history,
+  // so back, and a swipe from the edge, go to the step before.
+  const step = () => (history.state && history.state.step) || '';
+  let after = '';
+  function toStep(s) {
+    history.pushState({ step: s }, '', '/'); path = location.pathname;
+    ui.bad = false;
+    render(); window.scrollTo(0, 0);
+    const el = app.querySelector('.onb form input'); if (el) el.focus();
   }
+  const stepBar = () => `<header class="top"><div class="top-left"><button class="icon-btn" data-act="back" aria-label="Back">${BACK}</button><span class="mark">Muster</span></div></header>`;
+  const WEEKEND = ['fbmf', 'bfbm', 'ffff', 'mfbb', 'bmfb'];
+  const weekend = () => `<div class="wk" role="img" aria-label="Four friends' answers for each part of the weekend. Saturday night suits everyone.">
+      <div class="wk-grid" aria-hidden="true">${L.SLOTS.map((sl, c) => `<div class="wk-col${c === 2 ? ' best' : ''}"><b>${sl.day}<span>${sl.part}</span></b>${[...WEEKEND[c]].map((v, r) => `<i class="${v}" style="--c:${c};--r:${r}"></i>`).join('')}</div>`).join('')}</div>
+      <p class="wk-say" aria-hidden="true">Saturday night suits everyone</p>
+    </div>`;
+
+  const PLUS = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>';
+  const LINK = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 11.5a3.2 3.2 0 0 0 4.5 0l2.6-2.6a3.2 3.2 0 0 0-4.5-4.5l-.9.9M11.5 8.5a3.2 3.2 0 0 0-4.5 0l-2.6 2.6a3.2 3.2 0 0 0 4.5 4.5l.9-.9"/></svg>';
+  // A group as the phone last saw it: this weekend, a bar a person for each slot.
+  function groupCard(s) {
+    const c = ls.get('muster.g.' + s.id, null), st = c && c.state;
+    const head = sub => `<span class="gcard-head"><span><strong>${esc(s.name || 'Group')}</strong>${sub ? `<small>${sub}</small>` : ''}</span>${chev()}</span>`;
+    if (!st || !st.members || !st.members.length) return `<a class="gcard" href="/g/${s.id}" data-nav>${head('')}</a>`;
+    const now = new Date(), week = L.weekKey(now), n = st.members.length, rows = Math.min(n, 8);
+    const top = L.best(st, [week], now)[0];
+    const cols = L.SLOTS.map((sl, i) => {
+      const r = L.roll(st, week, i);
+      // More than eight people share the eight bars out in proportion.
+      const cut = k => Math.round(k * rows / n);
+      const f = cut(r.f.length), m = Math.min(rows - f, cut(r.m.length)), b = Math.min(rows - f - m, cut(r.b.length));
+      const bars = 'f'.repeat(f) + 'm'.repeat(m) + 'b'.repeat(b) + '-'.repeat(rows - f - m - b);
+      return `<span class="wk-col${top && top.i === i ? ' best' : ''}"><b>${sl.day}<span>${sl.part}</span></b>${[...bars].map(v => `<i class="${v === '-' ? '' : v}"></i>`).join('')}</span>`;
+    }).join('');
+    const say = top ? (top.all ? `${L.slotName(top.i)} suits everyone` : `${L.slotName(top.i)} suits ${top.f} of ${n}`) : 'No time that suits yet';
+    return `<a class="gcard" href="/g/${s.id}" data-nav aria-label="${esc(s.name || 'Group')}. ${say}.">${head(`${n} ${n === 1 ? 'person' : 'people'} · This weekend`)}
+      <span class="wk-grid" aria-hidden="true">${cols}</span><span class="wk-say${top ? '' : ' none'}" aria-hidden="true">${say}</span></a>`;
+  }
+
+  const steps = {
+    welcome: () => `<div class="onb">${bar()}
+      <h1 class="lead">See when everyone's free this weekend.</h1>
+      ${weekend()}
+      <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${legal()}</div></div>`,
+    groups: () => `<div class="onb">${bar()}
+      <h1 class="ask">Your groups</h1>
+      <nav class="gcards" aria-label="Your groups">${saved.map(groupCard).join('')}</nav>
+      <div class="end groups-acts"><button class="btn" data-act="step" data-s="create">Start a group</button><button class="btn ghost" data-act="step" data-s="link">Join a group</button></div></div>`,
+    name: () => `<div class="onb">${stepBar()}
+      <h1 class="ask">What's your name?</h1>
+      <form class="stack" data-form="name" autocomplete="off">
+        <input type="text" name="me" maxlength="24" aria-label="Your name" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" enterkeyhint="next">
+        <button class="btn wide">Continue</button>
+      </form></div>`,
+    choose: () => `<div class="onb">${stepBar()}
+      <h1 class="ask">Start a group, or join one?</h1>
+      <div class="pick">
+        <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><span><strong>Start a group</strong><small>Then send your friends the link.</small></span>${chev()}</button>
+        <button data-act="step" data-s="link"><span class="ic">${LINK}</span><span><strong>Join a group</strong><small>With a link a friend sent you.</small></span>${chev()}</button>
+      </div></div>`,
+    create: () => `<div class="onb">${stepBar()}
+      <h1 class="ask">Name your group</h1>
+      <form class="stack" data-form="create" autocomplete="off">
+        <input type="text" name="group" maxlength="40" aria-label="Group name" placeholder="The Usual Suspects" required autocapitalize="words" enterkeyhint="go">
+        <button class="btn wide">Start group</button>
+      </form></div>`,
+    link: () => `<div class="onb">${stepBar()}
+      <h1 class="ask">Paste the group's link</h1>
+      <form class="stack" data-form="link" autocomplete="off">
+        <input type="text" name="link" aria-label="Group link" placeholder="muster.teloone.au/g/..." required autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="url" enterkeyhint="go">
+        ${ui.bad ? `<p class="bad" role="alert">That isn't a Muster group link. Paste the whole link.</p>` : ''}
+        <button class="btn wide">Join</button>
+      </form></div>`,
+  };
+  const home = () => (steps[step()] || (saved.length ? steps.groups : steps.welcome))();
 
   const loading = () => `${bar()}<div class="lone"><p>Fetching the group.</p></div>`;
   const gone = () => `${bar()}<div class="lone"><h1>This link doesn't lead to a group.</h1><p>Check it's the whole link, or ask whoever sent it.</p><a class="btn" href="/" data-nav>Start a group</a></div>`;
@@ -672,15 +788,33 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       ls.set('muster.remind', false); plan(); renderSheet();
     },
     retry() { G.failed = false; render(); sync(); },
+    // Starting a group needs your name first.
+    step(d) {
+      if (d.s === 'create' && !ls.get('muster.name', '')) { after = 'create'; return toStep('name'); }
+      toStep(d.s);
+    },
+    back() { history.back(); },
   };
 
 
   const forms = {
+    name(f) {
+      const mine = clean(f.me.value, 24);
+      if (!mine) return;
+      ls.set('muster.name', mine);
+      const next = after || 'choose'; after = '';
+      toStep(next);
+    },
+    // The whole link, or just the end of it.
+    link(f) {
+      const m = f.link.value.trim().match(/(?:^|\/g\/)([A-Za-z0-9_-]{22})\/?(?:[?#].*)?$/);
+      if (!m) { ui.bad = true; render(); const el = app.querySelector('input[name=link]'); if (el) el.focus(); return; }
+      go('/g/' + m[1]);
+    },
     create(f) {
-      const name = clean(f.group.value, 40), mine = clean(f.me.value, 24);
+      const name = clean(f.group.value, 40), mine = clean(ls.get('muster.name', ''), 24);
       if (!name || !mine) return;
       const id = rid(), me = rid();
-      ls.set('muster.name', mine);
       const g = { id, me, state: { group: { id, name, version: 0 }, members: [], marks: {}, plans: [] }, queue: [] };
       [{ t: 'group', name }, { t: 'member', id: me, name: mine }].forEach(op => { L.applyOp(g.state, op); g.queue.push(op); });
       persist(g); remember(g);
@@ -784,14 +918,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
-  // "Next" on the group's name goes to your name, rather than starting the group.
-  document.addEventListener('keydown', e => {
-    const el = e.target;
-    if (e.key !== 'Enter' || el.name !== 'group' || !el.form || el.form.dataset.form !== 'create') return;
-    if (!shell && el.form.elements.me.value) return;
-    e.preventDefault(); el.form.elements.me.focus();
-  });
-
   if (shell) {
     shell.onmessage = e => {
       let m; try { m = JSON.parse(e.data); } catch (x) { return; }
