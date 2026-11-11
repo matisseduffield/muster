@@ -153,7 +153,8 @@ a { color: inherit; }
 .slot-n { font-size: .84rem; color: var(--muted); }
 .slot-n b { font-weight: 600; color: var(--ink); }
 .slot-n.all { color: var(--pos); font-weight: 600; }
-.who { grid-column: 1 / -1; display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 3px 8px; margin: 0; padding: 6px 4px 6px 14px; font-size: .86rem; }
+.who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 4px; padding: 6px 4px 4px 14px; }
+.who { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 3px 8px; width: 100%; margin: 0; font-size: .86rem; }
 .who dt { color: var(--muted); }
 .who dd { margin: 0; overflow-wrap: anywhere; }
 @media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 150px; } }
@@ -429,13 +430,14 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
       const all = n > 1 && r.f.length === n;
       const count = all ? `<span class="slot-n all">Everyone's free</span>`
         : `<span class="slot-n"><b>${r.f.length}</b> of ${n} free${r.m.length ? `, ${r.m.length} maybe` : ''}</span>`;
-      const who = open ? `<dl class="who">${[['Free', r.f], ['Maybe', r.m], ['Busy', r.b], ['No answer', r['-']]].filter(x => x[1].length).map(x => `<dt>${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl>` : '';
+      const who = open ? `<div class="who-box"><dl class="who">${[['Free', r.f], ['Maybe', r.m], ['Busy', r.b], ['No answer', r['-']]].filter(x => x[1].length).map(x => `<dt>${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl><button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
       return `<div class="slot">
         <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}</span>${count}</button>
         <div class="seg" role="group" aria-label="${L.slotWhen(w, i)}, your answer">${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
         ${who}
       </div>`;
     }).join('');
+    if (!rows) return '';
     return `<section class="section">
       <div class="sec-head"><h2>${L.relLabel(w, now)}</h2><span class="muted">${L.rangeLabel(w)}</span></div>
       <div class="card">${rows}</div>
@@ -549,9 +551,10 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
       const el = app.querySelector(`[data-act="who"][data-w="${d.w}"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true });
     },
     more() { ui.more = true; render(); },
-    event() {
-      const now = new Date(), w = L.weeks(now, 1)[0];
-      openSheet({ kind: 'event', w, i: openSlots(w, now)[0] });
+    // From the top it starts on this weekend; from a slot, on that slot.
+    event(d) {
+      const now = new Date(), w = d.w || L.weeks(now, 2).find(x => openSlots(x, now).length);
+      openSheet({ kind: 'event', w, i: d.i != null ? +d.i : openSlots(w, now)[0] });
     },
     slot(d) { ui.sheet.i = +d.i; renderSheet(); const el = sheetRoot.querySelector(`[data-act="slot"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true }); },
     rsvp(d) {
