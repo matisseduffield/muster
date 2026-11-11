@@ -35,6 +35,8 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
     var onActive: () -> Void = {}
     /// Scripts to run before each page's own.
     var scripts: [String] = []
+    /// Answers a page needs before it can carry on: `prompt('shell:<what>')`.
+    var answer: (String) -> String? = { _ in nil }
 
     private var first: String?
     private let tick = UISelectionFeedbackGenerator()
@@ -197,6 +199,13 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
         alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
         present(alert, animated: true)
+    }
+
+    // The pages never ask for typed text this way, so prompt() is how one gets
+    // an answer from the app without waiting for a message back.
+    func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
+        guard frame.isMainFrame, webView.url?.scheme == Shell.scheme, prompt.hasPrefix("shell:") else { return completionHandler(nil) }
+        completionHandler(answer(String(prompt.dropFirst(6))))
     }
 
     // MARK: Keeping what the pages store
