@@ -39,7 +39,7 @@
 }
 
 /* The family's paper and ink: sage-grey paper, near-black for what you press,
-   blue for links. Green only ever means the whole group is free. */
+   blue for links. Green is free, amber is maybe, grey is busy. */
 :root {
   --bg: #E8ECE5;
   --surface: #F7F8F4;
@@ -50,6 +50,8 @@
   --accent: #2C53C4;
   --pos: #1D7548;
   --neg: #B0392D;
+  --mid: #8F5E0E;
+  --off: #5B6861;
   --on-ink: #F7F8F4;
   --backdrop: rgba(10, 16, 14, .4);
   --font: "Hanken Grotesk", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
@@ -66,6 +68,8 @@
     --accent: #85A2FF;
     --pos: #5FC890;
     --neg: #F08476;
+    --mid: #E3B25C;
+    --off: #8C9992;
     --on-ink: #0E1412;
     --backdrop: rgba(0, 0, 0, .6);
     color-scheme: dark;
@@ -94,6 +98,7 @@ a { color: inherit; }
 
 #app { max-width: 600px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
 .muted { color: var(--muted); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Top bar */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; margin-bottom: -6px; }
@@ -143,6 +148,32 @@ a { color: inherit; }
 .seg button:focus-visible { outline-offset: -3px; }
 .seg small { font-size: .8rem; font-weight: 400; margin-left: 5px; opacity: .8; }
 
+/* Your answer: a knob you drag, or tap, to one of three stops. Until you
+   answer it waits in the middle, hollow, and counts for nothing. */
+.slide {
+  --p: 1; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 3px;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none;
+}
+.slide[data-pos="0"] { --p: 0; --knob: var(--pos); }
+.slide[data-pos="1"] { --knob: var(--mid); }
+.slide[data-pos="2"] { --p: 2; --knob: var(--off); }
+.knob {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 6px;
+  background: var(--knob, transparent); transform: translateX(calc(var(--p) * 100%));
+  transition: transform .24s cubic-bezier(.3, 1.2, .4, 1), background-color .15s;
+}
+.slide[data-pos="-"] .knob { outline: 1.5px dashed var(--line-strong); outline-offset: -1.5px; }
+.slide.drag .knob, .slide.still .knob { transition: background-color .15s; }
+.slide.drag { cursor: grabbing; }
+.slide button {
+  position: relative; appearance: none; min-height: 40px; padding: 0 2px; border: 0; border-radius: 6px;
+  background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color .15s;
+}
+.slide[data-pos="0"] button:nth-of-type(1), .slide[data-pos="1"] button:nth-of-type(2), .slide[data-pos="2"] button:nth-of-type(3) { color: var(--on-ink); font-weight: 600; }
+.slide button:focus-visible { outline-offset: -2px; }
+.slide small { font-size: .8rem; font-weight: 400; margin-left: 4px; opacity: .85; }
+
 /* A weekend: one row for each night and day */
 .slot { display: grid; grid-template-columns: minmax(0, 1fr) 174px; align-items: center; gap: 0 10px; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
 .slot:first-child { border-top: 0; }
@@ -150,14 +181,19 @@ a { color: inherit; }
 .slot-name { display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .slot-name svg { color: var(--muted); transition: transform .15s; }
 .slot-info[aria-expanded="true"] .slot-name svg { transform: rotate(180deg); }
-.slot-n { font-size: .84rem; color: var(--muted); }
+.slot-n { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font-size: .84rem; color: var(--muted); }
+/* One block a person: green free, amber maybe, grey busy, pale no answer */
+.pips { flex: none; display: block; fill: var(--line); }
+.pips .f { fill: var(--pos); } .pips .m { fill: var(--mid); } .pips .b { fill: var(--line-strong); }
 .slot-n b { font-weight: 600; color: var(--ink); }
 .slot-n.all { color: var(--pos); font-weight: 600; }
 .who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 4px; padding: 6px 4px 4px 14px; }
-.who { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 3px 8px; width: 100%; margin: 0; font-size: .86rem; }
-.who dt { color: var(--muted); }
+.who { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 3px 8px; width: 100%; margin: 0; font-size: .86rem; }
+.who dt { display: flex; align-items: center; gap: 6px; color: var(--muted); }
+.who dt::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 2px; background: var(--line); }
+.who dt.f::before { background: var(--pos); } .who dt.m::before { background: var(--mid); } .who dt.b::before { background: var(--line-strong); }
 .who dd { margin: 0; overflow-wrap: anywhere; }
-@media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 150px; } }
+@media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 156px; } .slide button { font-size: .8rem; } }
 
 /* Events */
 .events { display: grid; gap: 8px; }
@@ -423,17 +459,27 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
       ${ui.more ? '' : `<div><button class="link" data-act="more">Show later weekends</button></div>`}`;
   }
 
+  // Where the knob sits: 0, 1 or 2, or '-' before you've answered.
+  const pos = (list, v) => { const k = list.findIndex(a => a[0] === v); return k < 0 ? '-' : k; };
+  // The group's answers as a strip of blocks, one a person up to twelve.
+  function pips(r, n) {
+    const gap = n > 12 ? 0 : .22, parts = [['f', r.f.length], ['m', r.m.length], ['b', r.b.length], ['', r['-'].length]];
+    let x = 0, out = '';
+    for (const [c, k] of parts) for (let j = 0; j < k; j++, x++) out += `<rect class="${c}" x="${x}" width="${1 - gap}" height="1"/>`;
+    return `<svg class="pips" viewBox="0 0 ${n - gap} 1" width="${Math.min(n * 11 - 2, 72)}" height="6" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
+  }
+
   function week(w, now) {
     const s = G.state, n = s.members.length;
     const rows = openSlots(w, now).map(i => {
       const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i];
       const all = n > 1 && r.f.length === n;
       const count = all ? `<span class="slot-n all">Everyone's free</span>`
-        : `<span class="slot-n"><b>${r.f.length}</b> of ${n} free${r.m.length ? `, ${r.m.length} maybe` : ''}</span>`;
-      const who = open ? `<div class="who-box"><dl class="who">${[['Free', r.f], ['Maybe', r.m], ['Busy', r.b], ['No answer', r['-']]].filter(x => x[1].length).map(x => `<dt>${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl><button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
+        : `<span class="slot-n">${pips(r, n)}<span><b>${r.f.length}</b> free<span class="vh"> of ${n}${r.m.length ? `, ${r.m.length} maybe` : ''}</span></span></span>`;
+      const who = open ? `<div class="who-box"><dl class="who">${[['Free', r.f, 'f'], ['Maybe', r.m, 'm'], ['Busy', r.b, 'b'], ['No answer', r['-'], '']].filter(x => x[1].length).map(x => `<dt class="${x[2]}">${x[0]}</dt><dd>${people(x[1], 99)}</dd>`).join('')}</dl><button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
       return `<div class="slot">
         <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}</span>${count}</button>
-        <div class="seg" role="group" aria-label="${L.slotWhen(w, i)}, your answer">${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
+        <div class="slide" data-pos="${pos(ANSWERS, mine.v)}" role="group" aria-label="${L.slotWhen(w, i)}, your answer"><span class="knob"></span>${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
         ${who}
       </div>`;
     }).join('');
@@ -451,7 +497,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     const sure = ui.confirm === 'scrap:' + p.id;
     return `<div class="card ev">
       <div><div class="ev-when">${L.slotWhen(p.w, p.i)}</div><div class="ev-title">${esc(p.text)}</div></div>
-      <div class="seg" role="group" aria-label="Your answer">${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
+      <div class="slide" data-pos="${pos(REPLIES, mine)}" role="group" aria-label="Your answer"><span class="knob"></span>${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
       <div class="ev-who">${whoLine}</div>
       <div class="ev-foot"><span>${by ? `Posted by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</span>${p.by === G.me || !by ? `<button class="link quiet" data-act="scrap" data-p="${p.id}">${sure ? 'Tap again to delete' : 'Delete'}</button>` : ''}</div>
     </div>`;
@@ -540,10 +586,10 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     // Your answer for a slot. Tapping the one you gave takes it back.
     mark(d) {
       const i = +d.i, said = ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i];
-      push({ t: 'mark', m: G.me, w: d.w, i, v: said === d.v ? '-' : d.v });
+      if (!(d.set && said === d.v)) push({ t: 'mark', m: G.me, w: d.w, i, v: said === d.v ? '-' : d.v });
       render();
       const el = app.querySelector(`[data-act="mark"][data-w="${d.w}"][data-i="${i}"][data-v="${d.v}"]`);
-      if (el) el.focus({ preventScroll: true });
+      if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(ANSWERS, said)); }
     },
     who(d) {
       const k = d.w + ':' + d.i;
@@ -559,9 +605,11 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     slot(d) { ui.sheet.i = +d.i; renderSheet(); const el = sheetRoot.querySelector(`[data-act="slot"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true }); },
     rsvp(d) {
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
-      push({ t: 'rsvp', p: d.p, m: G.me, v: p.rsvp[G.me] === d.v ? '' : d.v });
+      const said = p.rsvp[G.me] || '';
+      if (!(d.set && said === d.v)) push({ t: 'rsvp', p: d.p, m: G.me, v: said === d.v ? '' : d.v });
       render();
-      const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`); if (el) el.focus({ preventScroll: true });
+      const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`);
+      if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(REPLIES, said)); }
     },
     scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
     invite() { send(`${G.state.group.name}: mark when you're free`); },
@@ -623,7 +671,50 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
     },
   };
 
+  // The page is redrawn after every answer, so the new knob starts where the
+  // old one was and slides from there.
+  function glide(el, from) {
+    const p = from === '-' ? 1 : +from;
+    el.classList.add('still'); el.style.setProperty('--p', p);
+    el.offsetWidth;
+    el.classList.remove('still'); el.style.removeProperty('--p');
+  }
+
+  // Dragging the knob. A plain tap falls through to the click below.
+  let drag = null, dragged = 0;
+  document.addEventListener('pointerdown', e => {
+    const el = e.target.closest('.slide');
+    if (!el || (e.pointerType === 'mouse' && e.button)) return;
+    const r = el.getBoundingClientRect();
+    drag = { el, id: e.pointerId, x: e.clientX, y: e.clientY, left: r.left + 3, step: (r.width - 6) / 3, on: false, was: el.dataset.pos, p: 1 };
+  });
+  document.addEventListener('pointermove', e => {
+    const g = drag; if (!g || e.pointerId !== g.id) return;
+    if (!g.on) {
+      const dx = Math.abs(e.clientX - g.x), dy = Math.abs(e.clientY - g.y);
+      if (dx < 7 || dx < dy) return;
+      g.on = true; g.el.classList.add('drag');
+      try { g.el.setPointerCapture(g.id); } catch (_) {}
+    }
+    g.p = Math.max(0, Math.min(2, (e.clientX - g.left) / g.step - .5));
+    const k = String(Math.round(g.p));
+    if (k !== g.el.dataset.pos) { g.el.dataset.pos = k; if (navigator.vibrate) navigator.vibrate(6); }
+    g.el.style.setProperty('--p', g.p);
+  });
+  const drop = e => {
+    const g = drag; if (!g || e.pointerId !== g.id) return;
+    drag = null;
+    if (!g.on) return;
+    dragged = Date.now();
+    const b = e.type === 'pointerup' && g.el.querySelectorAll('button')[Math.round(g.p)];
+    if (b && document.contains(b)) return acts[b.dataset.act]({ ...b.dataset, set: '1', from: g.p });
+    g.el.classList.remove('drag'); g.el.style.removeProperty('--p'); g.el.dataset.pos = g.was;
+  };
+  document.addEventListener('pointerup', drop);
+  document.addEventListener('pointercancel', drop);
+
   document.addEventListener('click', e => {
+    if (Date.now() - dragged < 350 && e.target.closest('.slide')) return;
     const nav = e.target.closest('a[data-nav]');
     if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); return go(nav.getAttribute('href')); }
     const el = e.target.closest('[data-act]');
