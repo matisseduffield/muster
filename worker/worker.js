@@ -41,6 +41,11 @@ const CORS = {
 // Group links are secrets: never leak them in a Referer, never index them.
 const PRIVATE = { 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex', 'X-Content-Type-Options': 'nosniff' };
 
+// The iPhone app, so links to groups open in it. Apple reads this once per install.
+const APPLE_LINKS = {
+  applinks: { details: [{ appIDs: ['4CN49LRZ9H.com.matisseduffield.muster'], components: [{ '/': '/g/*' }] }] },
+};
+
 const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS, ...PRIVATE, ...headers } });
 const fail = (status, error) => json({ error }, status);
@@ -59,6 +64,7 @@ export default {
         if (request.method === 'POST' && api[2]) return applyOps(env, id, request);
         return fail(405, 'Not allowed');
       }
+      if (url.pathname === '/.well-known/apple-app-site-association') return json(APPLE_LINKS, 200, { 'Cache-Control': 'public, max-age=3600' });
       if (request.method === 'GET') return serveWeb(url.pathname, url.search);
       return fail(405, 'Not allowed');
     } catch (e) {
