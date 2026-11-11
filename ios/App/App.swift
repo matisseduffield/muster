@@ -14,7 +14,10 @@ enum App {
     )
 
     static func launched() {}
-    static func setUp(_ shell: Shell) {}
+    static func setUp(_ shell: Shell) {
+        // Notifications may have been switched in Settings while the app was away.
+        shell.onActive = { [weak shell] in shell?.run("window.musterAsk && musterAsk()") }
+    }
 
     /// A group's link: https://muster.teloone.au/g/<id>, or muster://g/<id>.
     static func opened(link: URL) {

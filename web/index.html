@@ -313,6 +313,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // The Thursday reminder, in the iPhone app. The phone shows it by itself: one
   // for each weekend ahead you haven't fully answered, at 6 the evening before.
   const remindOn = () => !!ls.get('muster.remind', false);
+  // Notifications were refused: only the phone's Settings can turn them back on.
+  let remindBlocked = false;
   let planned = '';
   function plan() {
     if (!shell) return;
@@ -587,7 +589,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
-        ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : 'Turn on'}</button></div></div></div>` : ''}
+        ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>` : ''}
         <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
       </div>`;
   }
@@ -604,7 +606,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     if (ui.confirm === key) { ui.confirm = null; clearTimeout(confirmTimer); return true; }
     ui.confirm = key;
     clearTimeout(confirmTimer);
-    confirmTimer = setTimeout(() => { ui.confirm = null; render(); renderSheet(); }, 4000);
+    confirmTimer = setTimeout(() => {
+      ui.confirm = null; render();
+      // Drawing the sheet again would take the keyboard away mid-word.
+      const at = document.activeElement;
+      if (!(at && sheetRoot.contains(at) && /^(INPUT|TEXTAREA|SELECT)$/.test(at.tagName))) renderSheet();
+    }, 4000);
     return false;
   }
 
@@ -661,7 +668,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     },
     claim(d) { G.me = d.id; remember(G); render(); },
     remind() {
-      if (!remindOn()) return tell({ type: 'askNotifications' });
+      if (!remindOn()) return tell({ type: remindBlocked ? 'openSettings' : 'askNotifications' });
       ls.set('muster.remind', false); plan(); renderSheet();
     },
     retry() { G.failed = false; render(); sync(); },
@@ -777,6 +784,13 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && ui.sheet) closeSheet(); });
+  // "Next" on the group's name goes to your name, rather than starting the group.
+  document.addEventListener('keydown', e => {
+    const el = e.target;
+    if (e.key !== 'Enter' || el.name !== 'group' || !el.form || el.form.dataset.form !== 'create') return;
+    if (!shell && el.form.elements.me.value) return;
+    e.preventDefault(); el.form.elements.me.focus();
+  });
 
   if (shell) {
     shell.onmessage = e => {
@@ -784,15 +798,18 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (m.type === 'info') {
         // Notifications switched off in Settings: the reminder is off too.
         if (!m.notifications && remindOn()) ls.set('muster.remind', false);
+        if (m.notifications) remindBlocked = false;
         plan(); renderSheet();
       }
       if (m.type === 'notifications') {
         if (m.allowed) { ls.set('muster.remind', true); plan(); }
-        else toast('Notifications are off for Muster in Settings.');
+        else { remindBlocked = true; toast('Notifications are off for Muster in Settings.'); }
         renderSheet();
       }
     };
     tell({ type: 'hello' });
+    // Back from Settings, or from anywhere: ask again whether notifications are allowed.
+    window.musterAsk = () => tell({ type: 'hello' });
   }
 
   route();
