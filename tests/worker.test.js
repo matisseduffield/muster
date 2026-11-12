@@ -101,17 +101,77 @@ test('an unchanged group polls as 304', async () => {
 });
 
 test('renaming, a usual, and leaving', async () => {
-  const { start, post } = await setup();
+  const { start, post, env } = await setup();
   await start();
   await post([{ t: 'mark', m: YOU, w: W, i: 0, v: 'f' }]);
   const r = await post([{ t: 'group', name: '  The   Crew ' }, { t: 'member', id: ME, name: 'Mat', usual: 'f-f--' }, { t: 'member', id: YOU, removed: true }]);
   assert.equal(r.body.group.name, 'The Crew');
   assert.deepEqual(r.body.members, [{ id: ME, name: 'Mat', usual: 'f-f--' }]);
   assert.deepEqual(r.body.marks, {});
-  // Someone who left can't answer, and can come back.
+  // Someone who left can't answer, and nothing of them is kept.
   assert.deepEqual((await post([{ t: 'mark', m: YOU, w: W, i: 1, v: 'f' }])).body.marks, {});
-  const back = await post([{ t: 'member', id: YOU, removed: false }]);
-  assert.equal(back.body.marks[YOU][W], 'f----');
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM members WHERE id = ?').get(YOU).n, 0);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM marks WHERE member_id = ?').get(YOU).n, 0);
+  // Asking to be put back does nothing; joining again starts fresh.
+  assert.equal((await post([{ t: 'member', id: YOU, removed: false }])).body.members.length, 1);
+  const back = await post([{ t: 'member', id: YOU, name: 'You' }]);
+  assert.deepEqual(back.body.marks, {});
+  assert.equal(back.body.members.length, 2);
+});
+
+test('leaving takes replies along and leaves the plan unnamed', async () => {
+  const { start, post, env } = await setup();
+  await start();
+  await post([{ t: 'plan', id: P, w: W, i: 1, text: 'Beach', by: YOU }, { t: 'rsvp', p: P, m: YOU, v: 'in' }, { t: 'rsvp', p: P, m: ME, v: 'in' }]);
+  const r = await post([{ t: 'member', id: YOU, removed: true }]);
+  assert.deepEqual(r.body.plans[0].rsvp, { [ME]: 'in' });
+  assert.equal(r.body.plans[0].by, YOU);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM rsvps').get().n, 1);
+});
+
+test('deleting a group erases it for everyone and it cannot come back', async () => {
+  const { start, post, get, call, env } = await setup();
+  await start();
+  await post([{ t: 'mark', m: ME, w: W, i: 0, v: 'f' }, { t: 'plan', id: P, w: W, i: 1, text: 'Beach', by: ME }, { t: 'rsvp', p: P, m: ME, v: 'in' }]);
+  const code = (await call('POST', `/api/g/${G}/code`)).body.code;
+  assert.deepEqual((await call('POST', `/api/g/${G}/delete`)).body, { deleted: true });
+  for (const t of ['members', 'marks', 'plans', 'rsvps', 'codes']) assert.equal(env.DB.raw.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n, 0, t);
+  assert.equal(env.DB.raw.prepare('SELECT name FROM groups WHERE id = ?').get(G).name, '');
+  assert.equal((await get()).status, 404);
+  assert.equal((await call('GET', `/api/code/${code}`)).status, 404);
+  assert.equal((await call('POST', `/api/g/${G}/code`)).status, 404);
+  assert.equal((await call('POST', `/api/g/${G}/delete`)).status, 404);
+  // A phone's queued changes, even ones that start a group, don't revive it.
+  assert.equal((await post([{ t: 'group', name: 'Crew' }, { t: 'member', id: ME, name: 'Me' }])).status, 404);
+  assert.equal((await get()).status, 404);
+  // Another group is untouched.
+  await post([{ t: 'group', name: 'Other' }], G2);
+  assert.equal((await get(G2)).status, 200);
+});
+
+test('the word filter stars out listed words and leaves the rest', async () => {
+  const { start, post } = await setup();
+  await start();
+  const r = await post([
+    { t: 'group', name: 'The filtertestword crew' },
+    { t: 'member', id: ME, name: 'F1lt3rtestw0rds!' },
+    { t: 'plan', id: P, w: W, i: 1, text: 'Pub, then FILTERTESTWORDDD. Scunthorpe after', by: ME },
+  ]);
+  assert.equal(r.body.group.name, 'The *** crew');
+  assert.equal(r.body.members[0].name, '***');
+  assert.equal(r.body.plans[0].text, 'Pub, then *** Scunthorpe after');
+});
+
+test('the nightly tidy erases people removed before leaving erased them', async () => {
+  const { start, post, get, worker, env } = await setup();
+  await start();
+  await post([{ t: 'mark', m: YOU, w: W, i: 0, v: 'f' }]);
+  env.DB.raw.prepare('UPDATE members SET removed = 1 WHERE id = ?').run(YOU);
+  assert.equal((await post([{ t: 'member', id: YOU, name: 'Back' }])).body.members.length, 1);
+  await worker.scheduled({}, env);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM members').get().n, 1);
+  assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM marks').get().n, 0);
+  assert.equal((await get()).body.members.length, 1);
 });
 
 test('plans: called, answered, scrapped', async () => {

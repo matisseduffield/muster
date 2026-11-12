@@ -3,6 +3,7 @@
 //   GET  /api/g/:id       the whole group: { group, members, marks, plans }
 //   POST /api/g/:id/ops   apply changes { ops: [...] }, answer with the group
 //   POST /api/g/:id/code  the group's join code: { code, until }
+//   POST /api/g/:id/delete  delete the group for everyone, at once
 //   GET  /api/code/:code  the group a join code leads to: { id }
 //   GET  /app          the latest Android app (a redirect to the APK)
 //   GET  /, /g/:id, /j/:code, ...   the web app, served from the public muster-releases repo
@@ -11,6 +12,14 @@
 // There are no accounts: a group's 22-character random id is its link, and
 // anyone holding it can read and change the group. Responses carry the group's
 // version as an ETag, so polling an unchanged group costs a 304.
+//
+// Deleting a group removes its people, answers, plans and codes and blanks its
+// row, leaving only the random id. The id stays so a phone holding queued
+// changes can't bring the group back: a group with no name reads as gone (404),
+// and phones forget a group that answers 404.
+//
+// Someone who leaves, or is removed, is erased: their name, answers and replies
+// go. Plans they called stay, with no name on them.
 //
 // A join code is four capital letters that lead to a group for a week, so a
 // group can be read out or typed. One group has one live code; asking again
@@ -26,6 +35,8 @@
 //   { t: 'rsvp', p, m, v, s? }                v: in | maybe | out | '' (no answer). s: the slots they can make, as bits
 // Schema in schema.sql.
 
+// A live group always has a name, so a blank one marks a deleted group.
+const LIVE = "name <> ''";
 const WEB = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/web/';
 const APK = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/Muster.apk';
 const ID = /^[A-Za-z0-9_-]{22}$/;
@@ -82,13 +93,14 @@ export default {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     try {
-      const api = url.pathname.match(/^\/api\/g\/([^/]+)(\/ops|\/code)?$/);
+      const api = url.pathname.match(/^\/api\/g\/([^/]+)(\/ops|\/code|\/delete)?$/);
       if (api) {
         const id = api[1];
         if (!ID.test(id)) return fail(404, 'No such group');
         if (request.method === 'GET' && !api[2]) return getGroup(env, id, request);
         if (request.method === 'POST' && api[2] === '/ops') return applyOps(env, id, request);
         if (request.method === 'POST' && api[2] === '/code') return groupCode(env, id);
+        if (request.method === 'POST' && api[2] === '/delete') return deleteGroup(env, id);
         return fail(405, 'Not allowed');
       }
       const code = url.pathname.match(/^\/api\/code\/([^/]+)$/);
@@ -109,6 +121,10 @@ export default {
       env.DB.prepare('DELETE FROM rsvps WHERE plan_id IN (SELECT id FROM plans WHERE week < ?)').bind(old),
       env.DB.prepare('DELETE FROM plans WHERE week < ?').bind(old),
       env.DB.prepare('DELETE FROM codes WHERE expires <= ?').bind(Date.now()),
+      // People removed before leaving erased them: erase them now.
+      env.DB.prepare('DELETE FROM marks WHERE member_id IN (SELECT id FROM members WHERE removed = 1)'),
+      env.DB.prepare('DELETE FROM rsvps WHERE member_id IN (SELECT id FROM members WHERE removed = 1)'),
+      env.DB.prepare('DELETE FROM members WHERE removed = 1'),
       env.DB.prepare('DELETE FROM guesses WHERE since <= ?').bind(Date.now() - HOUR),
     ]);
   },
@@ -117,7 +133,7 @@ export default {
 async function readGroup(env, id, now) {
   const from = dateKey(now - SHOW_DAYS * DAY);
   const [g, members, marks, plans, rsvps] = await env.DB.batch([
-    env.DB.prepare('SELECT id, name, version FROM groups WHERE id = ?').bind(id),
+    env.DB.prepare(`SELECT id, name, version FROM groups WHERE id = ? AND ${LIVE}`).bind(id),
     env.DB.prepare('SELECT id, name, usual FROM members WHERE group_id = ? AND removed = 0 ORDER BY created_at, id').bind(id),
     env.DB.prepare('SELECT member_id, week, slots FROM marks WHERE group_id = ? AND week >= ?').bind(id, from),
     env.DB.prepare('SELECT id, week, slot, mask, text, by_id, created_at FROM plans WHERE group_id = ? AND deleted = 0 AND week >= ? ORDER BY created_at, id').bind(id, from),
@@ -147,7 +163,7 @@ async function readGroup(env, id, now) {
 const sameTag = (a, b) => !!a && a.replace(/^W\//, '') === b;
 
 async function getGroup(env, id, request) {
-  const head = await env.DB.prepare('SELECT version FROM groups WHERE id = ?').bind(id).first();
+  const head = await env.DB.prepare(`SELECT version FROM groups WHERE id = ? AND ${LIVE}`).bind(id).first();
   if (!head) return fail(404, 'No such group');
   if (sameTag(request.headers.get('If-None-Match'), `"${head.version}"`)) {
     return new Response(null, { status: 304, headers: { ETag: `"${head.version}"`, ...CORS, ...PRIVATE } });
@@ -169,7 +185,7 @@ function randomCode() {
 // The group's code: the one it has, with another week on it, or a new one.
 async function groupCode(env, id) {
   const db = env.DB, now = Date.now(), until = now + CODE_DAYS * DAY;
-  if (!await db.prepare('SELECT id FROM groups WHERE id = ?').bind(id).first()) return fail(404, 'No such group');
+  if (!await db.prepare(`SELECT id FROM groups WHERE id = ? AND ${LIVE}`).bind(id).first()) return fail(404, 'No such group');
   const have = await db.prepare('SELECT code FROM codes WHERE group_id = ? AND expires > ? ORDER BY expires DESC').bind(id, now).first();
   if (have) {
     await db.batch([db.prepare('UPDATE codes SET expires = ? WHERE code = ?').bind(until, have.code)]);
@@ -212,10 +228,45 @@ async function findCode(env, raw, request) {
   return fail(404, 'No such code');
 }
 
+// The word filter: slurs and a few crude words are starred out of anything typed.
+// The list is kept as hashes, so the words themselves aren't written here.
+const BAD = new Set([336914794, 373809855, 919192496, 1372089695, 1584456691, 1825958011, 1937589700, 2090526271, 2235558830, 2285825857, 2307522440, 2491417249, 2505785029, 2758825305, 3114006918, 3168946342, 3573646226, 3656079069, 3691556361, 4010308924, 4064161250, 4137990222, 4146676842, 4183830597, 4203129625, 4253324943]);
+// The same words with doubled letters pulled to one, for words typed drawn out.
+const BAD_FLAT = new Set([336914794, 373809855, 641486548, 919192496, 958105440, 1372089695, 1584456691, 1631846163, 1825958011, 1937589700, 2090526271, 2235558830, 2307522440, 2491417249, 3114006918, 3168946342, 3573646226, 3691556361, 3739672974, 3990946575, 4010308924, 4035825995, 4137990222, 4146676842, 4253324943]);
+const LOOKALIKE = { 0: 'o', 1: 'i', 3: 'e', 4: 'a', 5: 's', 7: 't', '@': 'a', $: 's', '!': 'i' };
+function hash(s) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+function isBad(word) {
+  // Read as it sounds: lower case, digits and signs as the letters they stand for. A 1 can be an i or an l.
+  const bare = word.toLowerCase().replace(/^[^a-z0-9\$]+|[^a-z0-9$]+$/g, '');
+  const read = one => bare.replace(/[013457\$!]/g, c => (c === '1' ? one : LOOKALIKE[c])).replace(/[^a-z]/g, '');
+  const hit = (set, x) => x.length > 2 && (set.has(hash(x)) || (x.endsWith('s') && set.has(hash(x.slice(0, -1)))));
+  // Only a drawn-out word is read with its doubles pulled in, so ordinary words that differ by a double stay.
+  return [read('i'), read('l')].some(w => hit(BAD, w) || (/(.)\1\1/.test(w) && (hit(BAD, w.replace(/(.)\1{2,}/g, '$1$1')) || hit(BAD_FLAT, w.replace(/(.)\1+/g, '$1')))));
+}
+const mask = s => s.replace(/\S+/g, w => (isBad(w) ? '***' : w));
+
 // Letters, digits and ordinary punctuation on one line; nothing a page could trip on later.
 function cleanText(s, max) {
   if (typeof s !== 'string') return '';
-  return s.replace(/[\x00-\x1F\x7F\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max).trim();
+  return mask(s.replace(/[\x00-\x1F\x7F\u2028\u2029]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max).trim());
+}
+
+async function deleteGroup(env, id) {
+  const db = env.DB, now = Date.now();
+  if (!await db.prepare(`SELECT id FROM groups WHERE id = ? AND ${LIVE}`).bind(id).first()) return fail(404, 'No such group');
+  await db.batch([
+    db.prepare('DELETE FROM rsvps WHERE group_id = ?').bind(id),
+    db.prepare('DELETE FROM plans WHERE group_id = ?').bind(id),
+    db.prepare('DELETE FROM marks WHERE group_id = ?').bind(id),
+    db.prepare('DELETE FROM members WHERE group_id = ?').bind(id),
+    db.prepare('DELETE FROM codes WHERE group_id = ?').bind(id),
+    db.prepare("UPDATE groups SET name = '', version = 0, created_at = ?, updated_at = ? WHERE id = ?").bind(now, now, id),
+  ]);
+  return json({ deleted: true });
 }
 
 // A weekend's Friday, not long past and not absurdly far ahead.
@@ -243,10 +294,11 @@ async function applyOps(env, id, request) {
   const now = Date.now();
   const db = env.DB;
   const [g, mem, pl] = await db.batch([
-    db.prepare('SELECT id FROM groups WHERE id = ?').bind(id),
+    db.prepare('SELECT name FROM groups WHERE id = ?').bind(id),
     db.prepare('SELECT id, removed FROM members WHERE group_id = ?').bind(id),
     db.prepare('SELECT id, deleted FROM plans WHERE group_id = ?').bind(id),
   ]);
+  if (g.results.length && !g.results[0].name) return fail(404, 'No such group');
   let exists = g.results.length > 0;
   const members = new Map(mem.results.map(m => [m.id, !m.removed]));
   const plans = new Map(pl.results.map(p => [p.id, !p.deleted]));
@@ -268,7 +320,15 @@ async function applyOps(env, id, request) {
       if (!isId(op.id)) continue;
       const name = op.name === undefined ? null : cleanText(op.name, 24) || null;
       const usual = typeof op.usual === 'string' && SLOTS.test(op.usual) ? op.usual : null;
-      const removed = op.removed === undefined ? null : op.removed ? 1 : 0;
+      if (op.removed) {
+        if (!members.has(op.id)) continue;
+        out.push(
+          db.prepare('DELETE FROM marks WHERE member_id = ? AND group_id = ?').bind(op.id, id),
+          db.prepare('DELETE FROM rsvps WHERE member_id = ? AND group_id = ?').bind(op.id, id),
+          db.prepare('DELETE FROM members WHERE id = ? AND group_id = ?').bind(op.id, id));
+        members.delete(op.id);
+        continue;
+      }
       if (!members.has(op.id)) {
         if (!name || live(members) >= MAX_MEMBERS) continue;
         // An id already used in another group stays theirs: nothing is added here.
@@ -276,10 +336,10 @@ async function applyOps(env, id, request) {
           .bind(op.id, id, name, usual || '-----', now, now));
         members.set(op.id, true);
       } else {
-        if (removed === 0 && !members.get(op.id) && live(members) >= MAX_MEMBERS) continue;
-        out.push(db.prepare('UPDATE members SET name = COALESCE(?, name), usual = COALESCE(?, usual), removed = COALESCE(?, removed), updated_at = ? WHERE id = ? AND group_id = ?')
-          .bind(name, usual, removed, now, op.id, id));
-        if (removed !== null) members.set(op.id, !removed);
+        // Rows from before leaving erased people may still be marked removed; they stay out.
+        if (!members.get(op.id)) continue;
+        out.push(db.prepare('UPDATE members SET name = COALESCE(?, name), usual = COALESCE(?, usual), updated_at = ? WHERE id = ? AND group_id = ?')
+          .bind(name, usual, now, op.id, id));
       }
     } else if (op.t === 'mark') {
       if (!members.get(op.m) || !goodWeek(op.w, now) || !goodSlot(op.i) || typeof op.v !== 'string' || !/^[fmb-]$/.test(op.v)) continue;

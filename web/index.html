@@ -952,7 +952,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required autocapitalize="words" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
         ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>` : ''}
-        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
+        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button><button class="link danger" data-act="wipe">${ui.confirm === 'wipe' ? 'Tap again to delete for everyone' : 'Delete this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
       </div>`;
   }
 
@@ -1072,6 +1072,18 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       })().catch(() => {});
       forget(g.id);
       go('/');
+    },
+    wipe() {
+      if (!sure('wipe')) return renderSheet();
+      const g = G;
+      // A group the server never had is only on this phone.
+      const sent = g.state.group.version ? fetch(`${API}/api/g/${g.id}/delete`, { method: 'POST' }).then(res => res.ok || res.status === 404) : Promise.resolve(true);
+      sent.catch(() => false).then(ok => {
+        if (!ok) { toast("Couldn't delete. Try again when you're online."); if (g === G) { ui.confirm = null; renderSheet(); } return; }
+        g.left = true; g.queue = [];
+        forget(g.id);
+        if (g === G) go('/');
+      });
     },
     claim(d) { G.me = d.id; remember(G); render(); },
     remind() {
