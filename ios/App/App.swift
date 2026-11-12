@@ -26,8 +26,21 @@ enum App {
     static func setUp(_ shell: Shell) {
         // Notifications may have been switched in Settings while the app was away.
         shell.onActive = { [weak shell] in shell?.run("window.musterAsk && musterAsk()") }
-        shell.onMessage = { type, msg in
+        shell.onMessage = { [weak shell] type, msg in
             switch type {
+            case "calendar":
+                // Apple's own new-event sheet, filled in. It needs no permission:
+                // the person sees the entry and saves or cancels it themselves.
+                guard let shell, shell.presentedViewController == nil,
+                      let start = (msg["start"] as? NSNumber)?.doubleValue, let end = (msg["end"] as? NSNumber)?.doubleValue else { return true }
+                CalendarSheet.shared.add(
+                    title: msg["title"] as? String ?? "",
+                    start: Date(timeIntervalSince1970: start / 1000),
+                    end: Date(timeIntervalSince1970: end / 1000),
+                    notes: msg["notes"] as? String ?? "",
+                    from: shell
+                )
+                return true
             case "unsent":
                 unsent = msg["on"] as? Bool ?? false
                 if !unsent { letGo() }

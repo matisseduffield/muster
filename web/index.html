@@ -130,6 +130,7 @@ a { color: inherit; }
 .link::after { content: ""; position: absolute; inset: -9px -6px; }
 .link.quiet { color: var(--muted); font-weight: 500; }
 .link.danger { color: var(--neg); }
+.ev-cal { justify-self: start; margin-top: -2px; }
 
 /* Sections and cards */
 .section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -410,7 +411,7 @@ a.person:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 <div id="app"></div>
 <div id="sheet"></div>
 <div id="toast" role="status"></div>
-<script src="lib.js?v=1"></script>
+<script src="lib.js?v=2"></script>
 <script>
 if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
@@ -880,6 +881,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       <div class="slide" data-pos="${pos(REPLIES, mine)}" role="group" aria-label="Your answer"><span class="knob"></span>${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
       ${part}
       ${roster(p.id, [...groups, ['none', 'No answer', s.members.filter(m => !p.rsvp[m.id])]], some)}
+      ${mine === 'in' || mine === 'maybe' ? `<button class="link quiet ev-cal" data-act="cal" data-p="${p.id}">Add to calendar</button>` : ''}
     </article>`;
   }
 
@@ -1063,6 +1065,17 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       render();
       const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`);
       if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(REPLIES, said)); }
+    },
+    // The phone's own calendar sheet in the apps; a calendar file on the website.
+    cal(d) {
+      const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
+      const t = L.planTimes(p), notes = `Planned with ${G.state.group.name} on Muster`;
+      if (shell) return tell({ type: 'calendar', title: p.text, start: t.start.getTime(), end: t.end.getTime(), notes });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([L.planIcs(p, notes, new Date())], { type: 'text/calendar' }));
+      a.download = 'muster-event.ics';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     },
     scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
     invite() {

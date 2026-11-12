@@ -111,3 +111,21 @@ test('an event over several slots', () => {
   L.applyOp(s, { t: 'rsvp', p: 'p', m: 'a', v: 'in', s: 0 });
   assert.deepEqual(L.planPart(s.plans[0], 'a'), [1, 2]);
 });
+
+test('a plan becomes a calendar entry with ordinary hours', () => {
+  const night = L.planTimes({ w: '2026-11-13', i: 2 });
+  assert.equal(night.start.getHours(), 19);
+  assert.equal(night.end.getHours(), 23);
+  assert.equal(L.key(night.start), '2026-11-14');
+  const both = L.planTimes({ w: '2026-11-13', i: 1, s: 30 });
+  assert.equal(L.key(both.start), '2026-11-14');
+  assert.equal(both.start.getHours(), 12);
+  assert.equal(L.key(both.end), '2026-11-15');
+  assert.equal(both.end.getHours(), 23);
+  const ics = L.planIcs({ id: 'abc', w: '2026-11-13', i: 2, text: 'Dinner; at Jo, 7ish' }, 'Planned with Crew on Muster', new Date(Date.UTC(2026, 10, 12, 1, 2, 3)));
+  assert.match(ics, /DTSTART:20261114T190000\r\n/);
+  assert.match(ics, /DTEND:20261114T230000\r\n/);
+  assert.match(ics, /SUMMARY:Dinner\\; at Jo\\, 7ish\r\n/);
+  assert.match(ics, /DTSTAMP:20261112T010203Z\r\n/);
+  assert.match(ics, /UID:abc@muster\.teloone\.au/);
+});

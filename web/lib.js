@@ -85,6 +85,26 @@
     return `${slotsName(list)}, ${dates}`;
   }
   // The slots of an event a person can make: all of them unless they said otherwise.
+  // A plan has no clock time, only the parts of the weekend it covers, so the
+  // calendar entry gets ordinary hours the person can change before saving:
+  // a day part runs noon to 5, a night 7 to 11.
+  function planTimes(p) {
+    const list = planSlots(p), first = list[0], last = list[list.length - 1];
+    const start = slotDate(p.w, first), end = slotDate(p.w, last);
+    start.setHours(SLOTS[first].part === 'night' ? 19 : 12, 0, 0, 0);
+    end.setHours(SLOTS[last].part === 'night' ? 23 : 17, 0, 0, 0);
+    return { start, end };
+  }
+  // The same plan as a calendar file, in the phone's own time zone.
+  function planIcs(p, notes, now) {
+    const t = planTimes(p), two = n => String(n).padStart(2, '0');
+    const local = d => `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}T${two(d.getHours())}${two(d.getMinutes())}00`;
+    const text = s => String(s).replace(/[\\;,]/g, c => '\\' + c).replace(/\s+/g, ' ').trim();
+    const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Muster//EN', 'BEGIN:VEVENT', `UID:${p.id}@muster.teloone.au`, `DTSTAMP:${stamp}`,
+      `DTSTART:${local(t.start)}`, `DTEND:${local(t.end)}`, `SUMMARY:${text(p.text)}`, `DESCRIPTION:${text(notes)}`, 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
+  }
+
   function planPart(p, m) {
     const all = planSlots(p), mine = bits((p.part && p.part[m]) || 0).filter(i => all.includes(i));
     return mine.length ? mine : all;
@@ -178,5 +198,5 @@
     return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
   }
 
-  return { SLOTS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, rangeParts, relLabel, slotName, slotWhen, bits, maskOf, planSlots, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
+  return { SLOTS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, rangeParts, relLabel, slotName, slotWhen, bits, maskOf, planSlots, planTimes, planIcs, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
 });

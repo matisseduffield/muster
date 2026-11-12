@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.provider.CalendarContract
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.webkit.RenderProcessGoneDetail
@@ -248,6 +249,16 @@ class MainActivity : ComponentActivity() {
                     .putExtra(Intent.EXTRA_SUBJECT, msg.optString("title"))
                     .putExtra(Intent.EXTRA_TEXT, msg.optString("text"))
                 startActivity(Intent.createChooser(send, null))
+            }
+            // The calendar app's own new-event screen, filled in; the person saves it.
+            "calendar" -> runCatching {
+                startActivity(
+                    Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
+                        .putExtra(CalendarContract.Events.TITLE, msg.optString("title"))
+                        .putExtra(CalendarContract.Events.DESCRIPTION, msg.optString("notes"))
+                        .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, msg.optLong("start"))
+                        .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, msg.optLong("end")),
+                )
             }
             // System tap feedback; Android skips it if touch feedback is off.
             "haptic" -> web.performHapticFeedback(
