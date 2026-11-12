@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Muster</string>
+    <string name="reminder_channel">Weekend reminder</string>
+</resources>

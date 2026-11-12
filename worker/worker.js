@@ -4,6 +4,7 @@
 //   POST /api/g/:id/ops   apply changes { ops: [...] }, answer with the group
 //   POST /api/g/:id/code  the group's join code: { code, until }
 //   GET  /api/code/:code  the group a join code leads to: { id }
+//   GET  /app          the latest Android app (a redirect to the APK)
 //   GET  /, /g/:id, /j/:code, ...   the web app, served from the public muster-releases repo
 //   scheduled             the daily Cron Trigger: forget weekends long past
 //
@@ -26,6 +27,7 @@
 // Schema in schema.sql.
 
 const WEB = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/web/';
+const APK = 'https://raw.githubusercontent.com/matisseduffield/muster-releases/main/Muster.apk';
 const ID = /^[A-Za-z0-9_-]{22}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SLOTS = /^[fmb-]{5}$/;
@@ -60,6 +62,16 @@ const APPLE_LINKS = {
   applinks: { details: [{ appIDs: ['4CN49LRZ9H.com.matisseduffield.muster'], components: [{ '/': '/g/*' }, { '/': '/j/*' }] }] },
 };
 
+// The Android app, likewise: the fingerprint of the key its builds are signed with.
+const ANDROID_LINKS = [{
+  relation: ['delegate_permission/common.handle_all_urls'],
+  target: {
+    namespace: 'android_app',
+    package_name: 'com.matisseduffield.muster',
+    sha256_cert_fingerprints: ['C9:A9:3E:D3:E7:AC:D0:C2:63:8A:98:F5:32:E6:F7:A6:93:9D:9B:F5:6B:83:60:DD:5F:ED:8D:94:D9:76:3D:02'],
+  },
+}];
+
 const json = (body, status = 200, headers = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...CORS, ...PRIVATE, ...headers } });
 const fail = (status, error) => json({ error }, status);
@@ -82,6 +94,8 @@ export default {
       const code = url.pathname.match(/^\/api\/code\/([^/]+)$/);
       if (code) return request.method === 'GET' ? findCode(env, code[1], request) : fail(405, 'Not allowed');
       if (url.pathname === '/.well-known/apple-app-site-association') return json(APPLE_LINKS, 200, { 'Cache-Control': 'public, max-age=3600' });
+      if (url.pathname === '/.well-known/assetlinks.json') return json(ANDROID_LINKS, 200, { 'Cache-Control': 'public, max-age=3600' });
+      if (url.pathname === '/app') return new Response(null, { status: 302, headers: { Location: APK, 'Cache-Control': 'no-store', ...PRIVATE } });
       if (request.method === 'GET') return serveWeb(url.pathname, url.search);
       return fail(405, 'Not allowed');
     } catch (e) {

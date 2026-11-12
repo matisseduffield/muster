@@ -102,6 +102,7 @@ a { color: inherit; }
 
 /* Top bar */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; margin-bottom: -6px; }
+.top-when { font-size: .88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .top-left { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .top-right { display: flex; align-items: center; gap: 14px; flex: none; }
 .mark { font-size: 1.2rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
@@ -685,8 +686,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       <h1 class="lead">See when everyone's free this weekend.</h1>
       ${weekend()}
       <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${legal() || links()}</div></div>`,
-    groups: () => `<div class="onb">${bar()}
-      <h1 class="ask">Your groups</h1>
+    groups: () => `<div class="onb"><header class="top"><a class="mark" href="/" data-nav>Muster</a><span class="top-when">${L.rangeLabel(L.weekKey(new Date()))}</span></header>
+      <h1 class="vh">Your groups</h1>
       <nav class="gcards" aria-label="Your groups">${saved.map(groupCard).join('')}</nav>
       <div class="end groups-acts"><button class="btn" data-act="step" data-s="create">Start a group</button><button class="btn ghost" data-act="step" data-s="link">Join a group</button></div></div>`,
     name: () => `<div class="onb">${stepBar()}<div class="mid">
