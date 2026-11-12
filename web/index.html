@@ -297,6 +297,17 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .onb form.stack input { min-height: 54px; font-size: 18px; }
 .onb .btn { min-height: 52px; font-size: 1rem; }
 .onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.inv .kick { margin-bottom: 4px; font-size: .95rem; font-weight: 500; color: var(--muted); }
+.inv .ask { font-size: 1.9rem; line-height: 1.15; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.inv .who { margin-top: 10px; color: var(--muted); overflow-wrap: anywhere; }
+.inv .wk-cap { padding: 0 6px; font-size: .84rem; color: var(--muted); }
+.inv .wk-say.none { font-weight: 400; color: var(--muted); }
+.inv .wk-say.none::before { background: var(--line-strong); }
+.inv .end { gap: 14px; }
+.inv .mine { display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.inv .mine p { font-size: .9rem; color: var(--muted); }
+.inv .names .btn { min-height: 44px; font-size: .95rem; }
+.inv .legal { margin-top: -4px; }
 .onb .groups-acts { grid-template-columns: 1fr 1fr; }
 /* A step sits in the middle, a little high so the keyboard clears it. */
 .onb .mid { flex: 1; display: flex; flex-direction: column; gap: 24px; text-align: center; }
@@ -688,10 +699,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   const PLUS = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>';
   // A group as the phone last saw it: this weekend, a bar a person for each slot.
-  function groupCard(s) {
-    const c = ls.get('muster.g.' + s.id, null), st = c && c.state;
-    const head = sub => `<span class="gcard-head"><span><strong>${esc(s.name || 'Group')}</strong>${sub ? `<small>${sub}</small>` : ''}</span>${chev()}</span>`;
-    if (!st || !st.members || !st.members.length) return `<a class="gcard" href="/g/${s.id}" data-nav>${head('')}</a>`;
+  function peek(st) {
     const now = new Date(), week = L.weekKey(now), n = st.members.length, rows = Math.min(n, 8);
     const top = L.best(st, [week], now)[0];
     const cols = L.SLOTS.map((sl, i) => {
@@ -703,6 +711,13 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       return `<span class="wk-col${top && top.i === i ? ' best' : ''}"><b>${sl.day}<span>${sl.part}</span></b>${[...bars].map((v, r) => `<i class="${v === '-' ? '' : v}" style="--c:${i};--r:${r}"></i>`).join('')}</span>`;
     }).join('');
     const say = top ? (top.all ? `${L.slotName(top.i)} suits everyone` : `${L.slotName(top.i)} suits ${top.f} of ${n}`) : 'No time that suits yet';
+    return { top, cols, say };
+  }
+  function groupCard(s) {
+    const c = ls.get('muster.g.' + s.id, null), st = c && c.state;
+    const head = sub => `<span class="gcard-head"><span><strong>${esc(s.name || 'Group')}</strong>${sub ? `<small>${sub}</small>` : ''}</span>${chev()}</span>`;
+    if (!st || !st.members || !st.members.length) return `<a class="gcard" href="/g/${s.id}" data-nav>${head('')}</a>`;
+    const n = st.members.length, { top, cols, say } = peek(st);
     return `<a class="gcard" href="/g/${s.id}" data-nav aria-label="${esc(s.name || 'Group')}. ${say}.">${head(`${n} ${n === 1 ? 'person' : 'people'} · This weekend`)}
       <span class="wk-grid" aria-hidden="true">${cols}</span><span class="wk-say${top ? '' : ' none'}" aria-hidden="true">${say}</span></a>`;
   }
@@ -755,18 +770,25 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   };
   const failed = () => `${bar()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
 
+  // Someone opened a group's link: what it is, who's in, and this weekend so far.
   function join() {
-    const s = G.state;
-    const names = s.members.length ? `<section class="section"><div class="sec-head"><h2>Already in it? Tap your name.</h2></div><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div></section>` : '';
-    return `
+    const s = G.state, a = s.members.map(m => m.name), n = a.length;
+    const who = !n ? 'Nobody has joined yet. Be the first.'
+      : n === 1 ? `${a[0]} is in.` : n <= 3 ? `${a.slice(0, -1).join(', ')} and ${a[n - 1]} are in.` : `${a[0]}, ${a[1]} and ${n - 2} others are in.`;
+    const p = n ? peek(s) : null;
+    return `<div class="onb inv">
       ${bar()}
-      <div><h1 class="lead">${esc(s.group.name)}</h1></div>
-      <form class="stack" data-form="join" autocomplete="off">
-        <label class="field"><span class="field-label">Your name</span><input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"></label>
-        <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
-        ${ui.dup ? `<p class="hint">${esc(ui.dupName)} is already here. If that's you, tap your name below.</p>` : ''}
-      </form>
-      ${names}${agree()}`;
+      <div><p class="kick">You're invited to</p><h1 class="ask">${esc(s.group.name)}</h1><p class="who">${esc(who)}</p></div>
+      ${p ? `<div class="wk" role="img" aria-label="This weekend so far. ${esc(p.say)}."><p class="wk-cap" aria-hidden="true">This weekend so far</p><div class="wk-grid" aria-hidden="true">${p.cols}</div><p class="wk-say${p.top ? '' : ' none'}" aria-hidden="true">${esc(p.say)}</p></div>` : ''}
+      <div class="end">
+        <form class="stack" data-form="join" autocomplete="off">
+          <input type="text" name="me" maxlength="24" value="${esc(ls.get('muster.name', ''))}" required placeholder="Your name" aria-label="Your name" autocapitalize="words" autocorrect="off" enterkeyhint="done">
+          <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
+          ${ui.dup ? `<p class="hint">${esc(ui.dupName)} is already here. If that's you, tap your name below.</p>` : ''}
+        </form>
+        ${n ? `<div class="mine"><p>Already in it? Tap your name.</p><div class="names">${s.members.map(m => `<button class="btn ghost" data-act="claim" data-id="${m.id}">${esc(m.name)}</button>`).join('')}</div></div>` : ''}
+        ${agree()}
+      </div></div>`;
   }
 
   const openSlots = (w, now = new Date()) => L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
