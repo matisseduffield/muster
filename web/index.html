@@ -355,6 +355,32 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .legal { margin-top: 4px; padding: 10px 0; text-align: center; font-size: .8rem; color: var(--muted); }
 .legal a { color: inherit; }
 a.person { color: inherit; text-decoration: none; }
+/* About: who made this and which build it is, then the ways out. */
+.about-id { display: grid; justify-items: center; gap: 4px; padding: 6px 0 18px; text-align: center; }
+.about-id img { margin-bottom: 10px; border-radius: 15px; }
+.about-id p, .about-foot { margin: 0; }
+/* About is a page of its own: it fills the screen and Back leaves it */
+.sheet.page { top: 0; max-width: none; max-height: none; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); border: 0; border-radius: 0; }
+.sheet.page.rise { animation: dim .18s; }
+.sheet.page > * { width: 100%; max-width: 600px; margin-inline: auto; }
+.sheet-head.back { justify-content: flex-start; gap: 4px; padding-left: 6px; }
+.sheet-head .back { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; border: 0; color: var(--ink); }
+.sheet.page .sheet-body { flex: 1; display: flex; flex-direction: column; padding-top: 36px; }
+.sheet.page .about-foot { margin-top: auto; }
+/* About's links: plain centred text, no rows */
+.about-links { display: grid; justify-items: center; text-align: center; }
+.about-links a, .about-links button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; background: none; border: 0; font-size: .95rem; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 4px; }
+.about-links [hidden] { display: none; }
+.about-links .about-mail { font-weight: 600; }
+.about-legal { display: flex; align-items: center; justify-content: center; }
+.about-legal i { flex: none; width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+.about-links .about-upd { min-height: 40px; margin-bottom: 10px; padding: 0 18px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: 99px; text-decoration: none; }
+.about-upd span { color: var(--muted); }
+.about-upd span:empty { display: none; }
+.about-name { font-size: 1.4rem; font-weight: 600; letter-spacing: -.02em; }
+.about-tag { color: var(--muted); }
+.about-ver { margin-top: 8px !important; padding: 4px 12px; border: 1px solid var(--line); border-radius: 99px; font-size: .82rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.about-foot { padding-top: 16px; text-align: center; font-size: .8rem; color: var(--muted); }
 a.person:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
 .lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
@@ -848,7 +874,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { if (el.value !== el.defaultValue) typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
     const inside = !!at && sheetRoot.contains(at), up = sheetRoot.firstChild ? '' : ' rise';
-    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
+    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}${sh.kind === 'about' ? ' page' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -882,15 +908,25 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // One place for the version, the policy, the terms and the way to us.
   let appVersion = '';
   const getApp = !shell && location.hostname === 'muster.teloone.au' && /Android/.test(navigator.userAgent);
+  // The app says which build it is. The website's copy is stamped with its version when it is published.
+  const WEB_VERSION = '__VERSION__';
   function aboutSheet() {
-    return `${sheetHead('Muster')}
-      <div class="sheet-body"><div class="people">
-        ${appVersion ? `<div class="person"><span>Version</span><em>${esc(appVersion)}</em></div>` : ''}
-        <a class="person" href="https://teloone.au/apps/muster/privacy/"><span>Privacy</span></a>
-        <a class="person" href="https://teloone.au/apps/muster/terms/"><span>Terms</span></a>
-        <a class="person" href="mailto:support@teloone.au?subject=Muster"><span>Contact</span><em>support@teloone.au</em></a>
-        ${getApp ? `<a class="person" href="/app"><span>Get the Android app</span></a>` : ''}
-      </div></div>`;
+    const v = appVersion || (WEB_VERSION.startsWith('__') ? '' : WEB_VERSION);
+    return `<div class="sheet-head back"><button class="back" data-act="close" aria-label="Back"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2 2 8l6 6"/></svg></button><h2 id="sheet-title">About</h2></div>
+      <div class="sheet-body">
+        <div class="about-id">
+          <img src="icons/icon-192.png" width="64" height="64" alt="" onerror="this.hidden=true">
+          <p class="about-name">Muster</p>
+          <p class="about-tag">See when everyone's free this weekend.</p>
+          ${v ? `<p class="about-ver">Version ${esc(v)}</p>` : ''}
+        </div>
+        <div class="about-links">
+      <a class="about-mail" href="mailto:support@teloone.au?subject=Muster">support@teloone.au</a>
+      <div class="about-legal"><a href="https://teloone.au/apps/muster/privacy/" rel="noreferrer">Privacy policy</a><i aria-hidden="true"></i><a href="https://teloone.au/apps/muster/terms/" rel="noreferrer">Terms of use</a></div>
+      ${getApp ? `<a href="/app">Get the Android app</a>` : ''}
+    </div>
+        <p class="about-foot">Made in Adelaide by Telo One</p>
+      </div>`;
   }
 
   function eventSheet(sh) {
