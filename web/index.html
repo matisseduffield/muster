@@ -352,9 +352,10 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .gcard .wk-say.none { font-weight: 400; color: var(--muted); }
 .gcard .wk-say.none::before { background: var(--line-strong); }
 
-.legal { margin-top: 4px; text-align: center; font-size: .8rem; color: var(--muted); }
-.legal nav { display: flex; justify-content: center; gap: 28px; }
-.legal a { display: flex; align-items: center; min-height: 44px; padding: 0 8px; font-size: .84rem; text-decoration: none; }
+.legal { margin-top: 4px; padding: 10px 0; text-align: center; font-size: .8rem; color: var(--muted); }
+.legal a { color: inherit; }
+a.person { color: inherit; text-decoration: none; }
+a.person:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
 .lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
 .lone p { color: var(--muted); }
@@ -572,7 +573,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function render() {
     view = kind();
     document.title = G && G.state ? `${G.state.group.name} · Muster` : 'Muster';
-    if (view !== 'board' && ui.sheet) { ui.sheet = null; renderSheet(); }
+    if (view !== 'board' && ui.sheet && ui.sheet.kind !== 'about') { ui.sheet = null; renderSheet(); }
     const html = ({ home, gone, failed, loading, join, board })[view]();
     // Nothing new: leave the page alone, so focus and half-typed names survive.
     if (html === drawn) return;
@@ -635,13 +636,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // ---- Screens ----
 
   const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
-  const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a></header>`;
+  const ABOUT = '<button class="link quiet" data-act="about">About</button>';
+  const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a>${ABOUT}</header>`;
 
-  // The iPhone app carries its own way to the terms and to us.
-  const legal = () => shell ? `<div class="legal"><p>By continuing you agree to the terms.</p><nav aria-label="Legal"><a href="https://teloone.au/apps/muster/terms/">Terms</a><a href="https://teloone.au/apps/muster/privacy/">Privacy</a><a href="mailto:support@teloone.au?subject=Muster">Contact</a></nav></div>` : '';
-
-  // Every first-run screen ends with the way to the terms and to us.
-  const links = () => `<div class="legal"><nav aria-label="Legal"><a href="https://teloone.au/apps/muster/terms/">Terms</a><a href="https://teloone.au/apps/muster/privacy/">Privacy</a><a href="mailto:support@teloone.au?subject=Muster">Contact</a></nav></div>`;
+  // The terms, privacy and the way to us live in About. The screens that begin
+  // something say only that going on agrees to the terms.
+  const agree = () => `<p class="legal">By continuing you agree to the <a href="https://teloone.au/apps/muster/terms/">terms</a>.</p>`;
 
   // Home asks one thing a screen. Each step is an entry in the phone's history,
   // so back, and a swipe from the edge, go to the step before.
@@ -685,8 +685,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     welcome: () => `<div class="onb">${bar()}
       <h1 class="lead">See when everyone's free this weekend.</h1>
       ${weekend()}
-      <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${legal() || links()}</div></div>`,
-    groups: () => `<div class="onb"><header class="top"><a class="mark" href="/" data-nav>Muster</a><span class="top-when">${L.rangeLabel(L.weekKey(new Date()))}</span></header>
+      <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${agree()}</div></div>`,
+    groups: () => `<div class="onb"><header class="top"><a class="mark" href="/" data-nav>Muster</a><div class="top-right"><span class="top-when">${L.rangeLabel(L.weekKey(new Date()))}</span>${ABOUT}</div></header>
       <h1 class="vh">Your groups</h1>
       <nav class="gcards" aria-label="Your groups">${saved.map(groupCard).join('')}</nav>
       <div class="end groups-acts"><button class="btn" data-act="step" data-s="create">Start a group</button><button class="btn ghost" data-act="step" data-s="link">Join a group</button></div></div>`,
@@ -695,26 +695,26 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       <form class="stack" data-form="name" autocomplete="off">
         <input type="text" name="me" maxlength="24" aria-label="Your name" value="${esc(ls.get('muster.name', ''))}" required autocapitalize="words" autocorrect="off" enterkeyhint="next">
         <button class="btn wide">Continue</button>
-      </form></div>${links()}</div>`,
+      </form></div></div>`,
     choose: () => `<div class="onb">${stepBar()}<div class="mid even">
       <h1 class="ask">Start a group, or join one?</h1>
       <div class="pick">
         <button data-act="step" data-s="create"><span class="ic">${PLUS}</span><strong>Start a group</strong><small>Then send your friends the code.</small></button>
         <button data-act="step" data-s="link"><span class="eg" aria-hidden="true"><i>J</i><i>K</i><i>L</i><i>M</i></span><strong>Join a group</strong><small>With a code from a friend.</small></button>
-      </div></div>${links()}</div>`,
+      </div></div></div>`,
     create: () => `<div class="onb">${stepBar()}<div class="mid">
       <h1 class="ask">Name your group</h1>
       <form class="stack" data-form="create" autocomplete="off">
         <input type="text" name="group" maxlength="40" aria-label="Group name" placeholder="The Usual Suspects" required autocapitalize="words" enterkeyhint="go">
         <button class="btn wide">Start group</button>
-      </form></div>${links()}</div>`,
+      </form></div></div>`,
     link: () => `<div class="onb">${stepBar()}<div class="mid">
       <h1 class="ask">Enter the group's code</h1>
       <form class="stack" data-form="link" autocomplete="off">
         <label class="code-in"><input type="text" name="link" aria-label="Group code, four letters" value="${esc(ui.code || '')}" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="go">${cells(ui.code || '')}</label>
         ${ui.bad ? `<p class="bad" role="alert">${BAD[ui.bad]}</p>` : ''}
         <button class="btn wide">Join</button>
-      </form></div>${links()}</div>`,
+      </form></div></div>`,
   };
   const cells = v => `<span class="cells" aria-hidden="true">${[0, 1, 2, 3].map(k => `<i${k === v.length ? ' class="at"' : ''}>${v[k] || ''}</i>`).join('')}</span>`;
   const BAD = { none: 'No group has that code. Codes last a week.', many: "Too many tries. Wait an hour, or open the group's link.", net: "Can't reach Muster. Check your connection." };
@@ -740,7 +740,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <button class="btn wide">${ui.dup ? 'Join anyway' : 'Join'}</button>
         ${ui.dup ? `<p class="hint">${esc(ui.dupName)} is already here. If that's you, tap your name below.</p>` : ''}
       </form>
-      ${names}${legal() || links()}`;
+      ${names}${agree()}`;
   }
 
   const openSlots = (w, now = new Date()) => L.SLOTS.map((_, i) => i).filter(i => !L.isPast(w, i, now));
@@ -837,8 +837,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function renderSheet(quiet) {
     const sh = ui.sheet;
-    if (!sh || view !== 'board') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
-    const html = sh.kind === 'event' ? eventSheet(sh) : sh.kind === 'invite' ? inviteSheet(sh) : settingsSheet();
+    if (!sh || view !== 'board' && sh.kind !== 'about') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
+    const html = sh.kind === 'about' ? aboutSheet() : sh.kind === 'event' ? eventSheet(sh) : sh.kind === 'invite' ? inviteSheet(sh) : settingsSheet();
     if (quiet && html === sheetDrawn) return;
     sheetDrawn = html;
     const y = sheetRoot.querySelector('.sheet') ? sheetRoot.querySelector('.sheet').scrollTop : 0;
@@ -879,6 +879,20 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       </div>`;
   }
 
+  // One place for the version, the policy, the terms and the way to us.
+  let appVersion = '';
+  const getApp = !shell && location.hostname === 'muster.teloone.au' && /Android/.test(navigator.userAgent);
+  function aboutSheet() {
+    return `${sheetHead('Muster')}
+      <div class="sheet-body"><div class="people">
+        ${appVersion ? `<div class="person"><span>Version</span><em>${esc(appVersion)}</em></div>` : ''}
+        <a class="person" href="https://teloone.au/apps/muster/privacy/"><span>Privacy</span></a>
+        <a class="person" href="https://teloone.au/apps/muster/terms/"><span>Terms</span></a>
+        <a class="person" href="mailto:support@teloone.au?subject=Muster"><span>Contact</span><em>support@teloone.au</em></a>
+        ${getApp ? `<a class="person" href="/app"><span>Get the Android app</span></a>` : ''}
+      </div></div>`;
+  }
+
   function eventSheet(sh) {
     const now = new Date(), open = openSlots(sh.w, now);
     return `${sheetHead('New event', 'Cancel')}
@@ -903,7 +917,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
         ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>` : ''}
         <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
-        ${links()}
       </div>`;
   }
 
@@ -1010,6 +1023,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     shareCode() { if (ui.sheet && ui.sheet.code) send(`Join ${G.state.group.name} on Muster with the code ${ui.sheet.code}`, `${SITE}/j/${ui.sheet.code}`); },
     shareLink() { send(`${G.state.group.name}: mark when you're free`); },
     settings() { openSheet({ kind: 'settings' }); },
+    about() { openSheet({ kind: 'about' }); },
     close() { closeSheet(); },
     remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
     leave() {
@@ -1192,6 +1206,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     shell.onmessage = e => {
       let m; try { m = JSON.parse(e.data); } catch (x) { return; }
       if (m.type === 'info') {
+        if (typeof m.version === 'string') appVersion = m.version.slice(0, 20);
         // Notifications switched off in Settings: the reminder is off too.
         if (!m.notifications && remindOn()) ls.set('muster.remind', false);
         // Allowed in Settings after asking here: the reminder they wanted goes on.

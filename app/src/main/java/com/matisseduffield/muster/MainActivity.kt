@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
         when (msg.optString("type")) {
             "hello" -> {
                 page = reply
-                send(JSONObject().put("type", "info").put("notifications", Reminders.allowed(this)))
+                send(JSONObject().put("type", "info").put("version", BuildConfig.VERSION_NAME).put("notifications", Reminders.allowed(this)))
             }
             "unsent" -> {
                 unsent = msg.optBoolean("on")
