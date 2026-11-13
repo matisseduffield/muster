@@ -130,7 +130,8 @@ a { color: inherit; }
 .link::after { content: ""; position: absolute; inset: -9px -6px; }
 .link.quiet { color: var(--muted); font-weight: 500; }
 .link.danger { color: var(--neg); }
-.ev-cal { justify-self: start; margin-top: -2px; }
+.ev-foot { display: flex; align-items: center; gap: 16px; margin-top: -2px; }
+.ev-foot .ev-del { margin-left: auto; }
 
 /* Sections and cards */
 .section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
@@ -233,7 +234,6 @@ a { color: inherit; }
 .ev-date.now span { color: inherit; opacity: .75; }
 .ev-when { font-size: .84rem; color: var(--muted); }
 .ev-title { font-size: 1.05rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
-.ev-top .link { align-self: start; padding-top: 2px; }
 /* Where the stub tears off. */
 .ev-tear { position: relative; height: 0; margin: 2px -14px; border-top: 1.5px dashed var(--line); }
 .ev-tear::before, .ev-tear::after { content: ""; position: absolute; top: -8px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
@@ -872,16 +872,19 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const a = L.slotDate(p.w, all[0]), b = L.slotDate(p.w, all[all.length - 1]), span = a.getTime() !== b.getTime();
     const month = d => d.toLocaleDateString('en-AU', { month: 'short' });
     const date = `<div class="ev-date${span ? ' wide' : ''}${L.key(a) === L.key(now) ? ' now' : ''}" aria-hidden="true"><b>${a.getDate()}${span ? `–${b.getDate()}` : ''}</b><span>${month(b)}</span></div>`;
+    // The foot of the card: the calendar on the left once you're coming, and
+    // on the right, for whoever called it, taking the event down.
+    const foot = (mine === 'in' || mine === 'maybe' ? `<button class="link quiet" data-act="cal" data-p="${p.id}">Add to calendar</button>` : '')
+      + (p.by === G.me || !by ? `<button class="link quiet ev-del${sure ? ' danger' : ''}" data-act="scrap" data-p="${p.id}">${sure ? 'Delete event?' : 'Delete event'}</button>` : '');
     return `<article class="card ev" data-k="e:${p.id}">
       <div class="ev-top">${date}
         <div><div class="ev-title">${esc(p.text)}</div><div class="ev-when"><span class="vh">${L.planWhen(p)}. </span><span aria-hidden="true">${L.slotsName(all)}</span>${by ? ` · by ${by.id === G.me ? 'you' : esc(by.name)}` : ''}</div></div>
-        ${p.by === G.me || !by ? `<button class="link quiet${sure ? ' danger' : ''}" data-act="scrap" data-p="${p.id}">${sure ? 'Delete?' : 'Delete'}</button>` : ''}
       </div>
       <div class="ev-tear"></div>
       <div class="slide" data-pos="${pos(REPLIES, mine)}" role="group" aria-label="Your answer"><span class="knob"></span>${groups.map(g => `<button data-act="rsvp" data-p="${p.id}" data-v="${g[0]}" aria-pressed="${mine === g[0]}">${g[1]}${g[2].length ? `<small>${g[2].length}</small>` : ''}</button>`).join('')}</div>
       ${part}
       ${roster(p.id, [...groups, ['none', 'No answer', s.members.filter(m => !p.rsvp[m.id])]], some)}
-      ${mine === 'in' || mine === 'maybe' ? `<button class="link quiet ev-cal" data-act="cal" data-p="${p.id}">Add to calendar</button>` : ''}
+      ${foot ? `<div class="ev-foot">${foot}</div>` : ''}
     </article>`;
   }
 
