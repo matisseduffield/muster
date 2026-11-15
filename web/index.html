@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#E8ECE5" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0E1412" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F0F1F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#171719" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
@@ -38,42 +38,90 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* The family's paper and ink: sage-grey paper, near-black for what you press,
-   blue for links. Green is free, amber is maybe, grey is busy. */
+/* Plain greys and one colour: a near-black page (pale grey by day), one lighter
+   grey for every card on it, blue for the thing to press and the value that's
+   set. Green is free, amber is maybe, grey is busy. Buttons are pills lit a
+   little from above; the round ones in a header are flat discs. */
 :root {
-  --bg: #E8ECE5;
-  --surface: #F7F8F4;
-  --ink: #14211C;
-  --muted: #5B6861;
-  --line: #CDD5CC;
-  --line-strong: #8C968F;
+  --bg: #F0F1F3;
+  --surface: #FFFFFF;
+  --ink: #17181B;
+  --muted: #5F6168;
+  --faint: #696B72;
+  --line: #E1E2E6;
+  --line-strong: #8D8F96;
   --accent: #2C53C4;
   --pos: #1D7548;
   --neg: #B0392D;
   --mid: #8F5E0E;
-  --off: #5B6861;
-  --on-ink: #F7F8F4;
-  --backdrop: rgba(10, 16, 14, .4);
+  --off: #5F6168;
+  --on-ink: #FFFFFF;
+  --key: #D6D8DE;
+  --key-hi: #E4E5EA;
+  --key-down: #C6C8CF;
+  --pop: #FFFFFF;
+  --pop-line: rgba(0, 0, 0, .06);
+  --disc: #FFFFFF;
+  --disc-edge: inset 0 0 0 1px rgba(0, 0, 0, .05), 0 2px 6px rgba(0, 0, 0, .08);
+  --rim: inset 0 0 0 1px rgba(0, 0, 0, .04), inset 0 1px 0 rgba(255, 255, 255, .6);
+  --lift: 0 1px 3px rgba(0, 0, 0, .12);
+  --backdrop: rgba(12, 13, 16, .4);
   --font: "Hanken Grotesk", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1412;
-    --surface: #18211E;
-    --ink: #E4EAE5;
-    --muted: #8C9992;
-    --line: #2E3A35;
-    --line-strong: #5F6C66;
+    --bg: #171719;
+    --surface: #2F2F2F;
+    --ink: #EAEAEA;
+    --muted: #A0A0A3;
+    --faint: #949497;
+    --line: #434345;
+    --line-strong: #6E6E72;
     --accent: #85A2FF;
     --pos: #5FC890;
     --neg: #F08476;
     --mid: #E3B25C;
-    --off: #8C9992;
-    --on-ink: #0E1412;
+    --off: #A0A0A3;
+    --on-ink: #171719;
+    --key: #303132;
+    --key-hi: #47484A;
+    --key-down: #555658;
+    --pop: #121213;
+    --pop-line: rgba(255, 255, 255, .14);
+    --disc: #252526;
+    --disc-edge: inset 0 0 0 1px rgba(255, 255, 255, .08), 0 4px 10px rgba(0, 0, 0, .35);
+    --rim: inset 0 0 0 1px rgba(255, 255, 255, .05), inset 0 1px 0 rgba(255, 255, 255, .1);
+    --lift: 0 2px 5px rgba(0, 0, 0, .35);
     --backdrop: rgba(0, 0, 0, .6);
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #171719;
+  --surface: #2F2F2F;
+  --ink: #EAEAEA;
+  --muted: #A0A0A3;
+  --faint: #949497;
+  --line: #434345;
+  --line-strong: #6E6E72;
+  --accent: #85A2FF;
+  --pos: #5FC890;
+  --neg: #F08476;
+  --mid: #E3B25C;
+  --off: #A0A0A3;
+  --on-ink: #171719;
+  --key: #303132;
+  --key-hi: #47484A;
+  --key-down: #555658;
+  --pop: #121213;
+  --pop-line: rgba(255, 255, 255, .14);
+  --disc: #252526;
+  --disc-edge: inset 0 0 0 1px rgba(255, 255, 255, .08), 0 4px 10px rgba(0, 0, 0, .35);
+  --rim: inset 0 0 0 1px rgba(255, 255, 255, .05), inset 0 1px 0 rgba(255, 255, 255, .1);
+  --lift: 0 2px 5px rgba(0, 0, 0, .35);
+  --backdrop: rgba(0, 0, 0, .6);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -86,7 +134,7 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  padding-block: calc(28px + env(safe-area-inset-top, 0px)) calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-block: calc(8px + env(safe-area-inset-top, 0px)) calc(24px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
@@ -100,307 +148,340 @@ a { color: inherit; }
 .muted { color: var(--muted); }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Top bar */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; margin-bottom: -6px; }
-.top-when { font-size: .88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-.top-left { display: flex; align-items: center; gap: 4px; min-width: 0; }
-.top-right { display: flex; align-items: center; gap: 14px; flex: none; }
-.mark { font-size: 1.2rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+/* Top bar: a round Back with the name beside it, then a round button at the right */
+.top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; margin-bottom: -6px; }
+.top-when { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.top-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.top-right { display: flex; align-items: center; gap: 10px; flex: none; }
+.mark { min-width: 0; font-size: 1.35rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+.top > .mark { padding-left: 6px; }
+a.mark { line-height: 44px; }
 .icon-btn {
-  flex: none; display: grid; place-items: center;
-  width: 44px; height: 44px; margin: 0 -8px;
-  background: none; border: 0; border-radius: 50%; color: var(--muted);
+  position: relative; flex: none; display: grid; place-items: center;
+  width: 44px; height: 44px; padding: 0;
+  background: var(--disc); border: 0; border-radius: 50%; box-shadow: var(--disc-edge); color: var(--ink);
 }
-.icon-btn:hover { color: var(--ink); }
-.top-left .icon-btn { margin-left: -12px; }
-.mark-n { flex: none; margin-left: 6px; min-width: 22px; padding: 0 6px; font-size: .78rem; font-weight: 600; line-height: 20px; text-align: center; font-variant-numeric: tabular-nums; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 11px; }
-.status { margin: -14px 0 -6px; font-size: .84rem; color: var(--muted); }
+.icon-btn:active { background: var(--key-down); }
+/* A group's name has how many are in it on a small line beneath */
+.top-title { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.top-title .mark { line-height: 1.2; }
+.mark-n { font-size: .84rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status { margin: -10px 6px -6px; font-size: .86rem; color: var(--muted); }
 
-/* Buttons */
+/* More: a small panel that drops from under its button, a picture and a word for each thing */
+.scrim { position: fixed; inset: 0; z-index: 4; }
+.menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; min-width: 192px; max-width: 100%; padding: 9px 8px; background: var(--pop); border: 1px solid var(--pop-line); border-radius: 28px; box-shadow: 0 12px 32px rgba(0, 0, 0, .4); transform-origin: top right; }
+.menu-row { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 46px; padding: 0 20px 0 16px; background: none; border: 0; border-radius: 18px; font-size: 1.06rem; text-align: left; white-space: nowrap; }
+.menu-row:active { background: var(--key); }
+@media (hover: hover) { .menu-row:hover { background: var(--key); } }
+.menu-row svg { flex: none; width: 22px; height: 22px; }
+.menu-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+
+/* Buttons: pills. The one that carries the screen on is blue; the rest are grey keys. */
 .btn {
   appearance: none; display: inline-flex; align-items: center; justify-content: center;
-  min-height: 46px; padding: 0 18px; border-radius: 6px;
-  font-size: .95rem; font-weight: 600; text-decoration: none;
-  background: var(--ink); border: 1px solid var(--ink); color: var(--on-ink);
+  min-height: 52px; padding: 0 22px; border: 0; border-radius: 99px;
+  font-size: 1rem; font-weight: 500; text-decoration: none;
+  background: var(--accent); color: var(--on-ink);
 }
-.btn.ghost { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+.btn:active { opacity: .85; }
+.btn.ghost { background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim); color: var(--ink); }
+.btn.ghost:active { background: var(--key-down); opacity: 1; }
 .btn.wide { width: 100%; }
-.link { position: relative; appearance: none; padding: 6px 0; background: none; border: 0; font-size: .88rem; font-weight: 600; color: var(--accent); text-decoration: none; }
+.link { position: relative; appearance: none; padding: 6px 0; background: none; border: 0; font-size: .92rem; font-weight: 500; color: var(--accent); text-decoration: none; }
 /* Text buttons stay small on screen but take a full-size tap */
 .link::after { content: ""; position: absolute; inset: -9px -6px; }
-.link.quiet { color: var(--muted); font-weight: 500; }
+.link.quiet { color: var(--muted); }
 .link.danger { color: var(--neg); }
 .ev-foot { display: flex; align-items: center; gap: 16px; margin-top: -2px; }
 .ev-foot .ev-del { margin-left: auto; }
 
 /* Sections and cards */
 .section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 2px; }
-.sec-head h2 { font-size: .95rem; font-weight: 600; }
-.sec-head .muted { font-size: .88rem; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 6px; }
+.sec-head h2 { font-size: 1rem; font-weight: 500; }
+.sec-head .muted { font-size: .9rem; }
 .sec-side { display: flex; align-items: center; gap: 10px; }
 /* A weekend's five slots as bars: the taller, the more of the group is free. */
 .sky { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
-.sky i { position: relative; width: 5px; height: 100%; border-radius: 2px; background: var(--line); overflow: hidden; }
+.sky i { position: relative; width: 5px; height: 100%; border-radius: 2px; background: color-mix(in srgb, var(--ink) 14%, transparent); overflow: hidden; }
 .sky i.gap { margin-left: 3px; }
 .sky i.past { opacity: .45; }
 .sky b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px; background: var(--pos); transform-origin: bottom; }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-.empty { padding: 2px 2px 0; font-size: .9rem; color: var(--muted); }
+.card { background: var(--surface); border-radius: 24px; }
+.empty { padding: 2px 6px 0; font-size: .92rem; color: var(--muted); }
+.more-weeks { padding: 0 6px; }
 
-/* Three answers side by side: the one you gave is filled in */
-.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+/* A few things to pick from, in one pill-shaped track: what's picked is a raised key, the rest lie flat */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; background: var(--bg); border-radius: 99px; }
 .seg button {
-  appearance: none; min-height: 44px; padding: 0 4px; border: 0; border-left: 1px solid var(--line);
+  position: relative; appearance: none; min-height: 44px; padding: 0 4px; border: 0; border-radius: 99px;
   background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap;
 }
-.seg button:first-child { border-left: 0; }
-.seg button[aria-pressed="true"] { background: var(--ink); color: var(--on-ink); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim), var(--lift); color: var(--ink); }
 .seg button:focus-visible { outline-offset: -3px; }
-.seg small { font-size: .8rem; font-weight: 400; margin-left: 5px; opacity: .8; }
+.seg small { font-size: .8rem; font-weight: 400; margin-left: 5px; }
 
 /* Your answer: a knob you drag, or tap, to one of three stops. Until you
-   answer it waits in the middle, hollow, and counts for nothing. */
+   answer there is no knob, only the empty track and its three words. */
 .slide {
   --p: 1; position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 3px;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 9px;
+  background: var(--bg); border-radius: 99px;
   touch-action: pan-y; user-select: none; -webkit-user-select: none;
 }
 .slide[data-pos="0"] { --p: 0; --knob: var(--pos); }
 .slide[data-pos="1"] { --knob: var(--mid); }
 .slide[data-pos="2"] { --p: 2; --knob: var(--off); }
 .knob {
-  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 6px;
+  position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc((100% - 6px) / 3); border-radius: 99px;
   background: var(--knob, transparent); transform: translateX(calc(var(--p) * 100%));
   transition: transform .24s cubic-bezier(.3, 1.2, .4, 1), background-color .15s;
 }
-.slide[data-pos="-"] .knob { outline: 1.5px dashed var(--line-strong); outline-offset: -1.5px; }
+.slide:not([data-pos="-"]) .knob { box-shadow: var(--rim), var(--lift); }
 .slide.drag .knob, .slide.still .knob { transition: background-color .15s; }
 .slide.drag { cursor: grabbing; }
 .slide button {
-  position: relative; appearance: none; min-height: 44px; padding: 0 2px; border: 0; border-radius: 6px;
+  position: relative; appearance: none; min-height: 44px; padding: 0 2px; border: 0; border-radius: 99px;
   background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap; transition: color .15s;
 }
-.slide[data-pos="0"] button:nth-of-type(1), .slide[data-pos="1"] button:nth-of-type(2), .slide[data-pos="2"] button:nth-of-type(3) { color: var(--on-ink); font-weight: 600; }
+.slide[data-pos="0"] button:nth-of-type(1), .slide[data-pos="1"] button:nth-of-type(2), .slide[data-pos="2"] button:nth-of-type(3) { color: var(--on-ink); }
 .slide button:focus-visible { outline-offset: -2px; }
-.slide small { font-size: .8rem; font-weight: 400; margin-left: 4px; opacity: .85; }
+.slide small { font-size: .8rem; font-weight: 400; margin-left: 4px; }
 
-/* A weekend: one row for each night and day */
-.slot { display: grid; grid-template-columns: minmax(0, 1fr) 174px; align-items: center; gap: 0 10px; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); }
-.slot:first-child { border-top: 0; }
-.slot-info { appearance: none; display: grid; gap: 0; min-height: 44px; padding: 0 0 0 14px; background: none; border: 0; text-align: left; align-content: center; }
-.slot-name { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+/* A weekend: one row for each night and day, a hairline between them. The words,
+   the track, the hairline and the names all keep to one edge each side (--edge),
+   the same one an event card keeps. */
+.card { --edge: 18px; }
+.slot { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) clamp(150px, 44vw, 174px); align-items: center; gap: 0 10px; padding: 10px var(--edge) 10px 0; }
+.slot + .slot::before { content: ""; position: absolute; top: 0; left: var(--edge); right: var(--edge); border-top: 1px solid var(--line); }
+.slot-info { appearance: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 44px; padding: 0 0 0 var(--edge); background: none; border: 0; text-align: left; align-content: center; }
+.slot-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; font-weight: 500; }
 .slot-name svg { color: var(--muted); transition: transform .15s; }
 .slot-info[aria-expanded="true"] .slot-name svg { transform: rotate(180deg); }
-.slot-n { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font-size: .84rem; color: var(--muted); }
+.slot-n { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font-size: .86rem; color: var(--muted); }
 /* One block a person: green free, amber maybe, grey busy, pale no answer */
 .pips { flex: none; display: block; fill: var(--line); }
 .pips .f { fill: var(--pos); } .pips .m { fill: var(--mid); } .pips .b { fill: var(--line-strong); }
-.slot-n b { display: inline-block; font-weight: 600; color: var(--ink); }
-.slot-n.all { color: var(--pos); font-weight: 600; }
-.top-slot { margin-left: 2px; padding: 0 5px; font-size: .7rem; font-weight: 600; line-height: 16px; color: var(--pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, var(--surface)); border-radius: 4px; }
+.slot-n b { display: inline-block; font-weight: 500; color: var(--ink); }
+.slot-n.all { flex-wrap: nowrap; min-width: 0; color: var(--pos); font-weight: 500; white-space: nowrap; }
+.slot-n.all > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.top-slot { font-size: .8rem; font-weight: 500; color: var(--pos); }
 /* Everyone can come: a dot that keeps ringing. */
 .live { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
 .live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--pos); animation: ring 2.4s ease-out infinite; }
 @keyframes ring { from { opacity: .55; transform: scale(1); } 70%, to { opacity: 0; transform: scale(3.2); } }
-.who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 8px; padding: 4px 4px 6px 14px; }
+.who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 8px; padding: 6px 0 6px var(--edge); }
 
 /* Everyone by name, and how they answered: filled is yes, dashed is maybe,
-   struck through is no, dotted hasn't said. */
-.roster { display: flex; flex-wrap: wrap; gap: 5px; width: 100%; margin: 0; padding: 0; list-style: none; }
-.roster li { display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; min-height: 26px; padding: 2px 8px; border: 1px solid transparent; border-radius: 5px; font-size: .84rem; line-height: 20px; white-space: nowrap; }
+   struck through is no, plain grey hasn't said. */
+.roster { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; margin: 0; padding: 0; list-style: none; }
+.roster li { display: inline-flex; align-items: baseline; gap: 5px; max-width: 100%; min-height: 28px; padding: 3px 11px; border: 1px solid transparent; border-radius: 99px; font-size: .86rem; line-height: 20px; white-space: nowrap; }
 .roster .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.roster .in { background: color-mix(in srgb, var(--pos) 14%, var(--surface)); border-color: color-mix(in srgb, var(--pos) 42%, var(--surface)); font-weight: 500; }
-.roster .maybe { background: color-mix(in srgb, var(--mid) 8%, var(--surface)); border: 1px dashed color-mix(in srgb, var(--mid) 75%, var(--surface)); }
-.roster .out { padding-inline: 4px; color: var(--muted); }
+.roster .in { background: color-mix(in srgb, var(--pos) 16%, var(--surface)); }
+.roster .maybe { border: 1px dashed color-mix(in srgb, var(--mid) 75%, var(--surface)); }
+.roster .out { padding-inline: 5px; color: var(--muted); }
 .roster .out .nm { text-decoration: line-through; text-decoration-color: var(--line-strong); }
-.roster .none { color: var(--muted); border: 1px dotted var(--line-strong); }
-.roster .me { font-weight: 600; }
-.roster small { font-size: .74rem; font-weight: 400; color: var(--muted); }
+.roster .none { padding-inline: 5px; color: var(--muted); }
+.roster .me { font-weight: 500; }
+.roster small { font-size: .78rem; font-weight: 400; color: var(--muted); }
 .roster .more { padding: 0; }
-.roster .more button { appearance: none; min-height: 26px; padding: 0 8px; background: none; border: 0; font-size: .84rem; font-weight: 600; color: var(--accent); }
-@media (max-width: 350px) { .slot { grid-template-columns: minmax(0, 1fr) 156px; } .slide button { font-size: .8rem; } }
+.roster .more button { position: relative; appearance: none; min-height: 28px; padding: 0 9px; background: none; border: 0; font-size: .86rem; font-weight: 500; color: var(--accent); }
+/* Small on screen, a full-size tap */
+.roster .more button::after { content: ""; position: absolute; inset: -8px -6px; }
+/* A narrow phone: a tighter edge and a narrower track, so a row's words stay on their line */
+@media (max-width: 350px) {
+  .card { --edge: 14px; }
+  .slot { grid-template-columns: minmax(0, 1fr) 144px; gap: 0 8px; }
+  .slot-name { gap: 0 4px; }
+  .top-slot { font-size: .74rem; }
+  .slide button { font-size: .8rem; }
+  .pips { width: 44px; }
+  .slot-n.all { gap: 5px; font-size: .8rem; }
+}
 
-/* Events */
-.events { display: grid; gap: 8px; }
-.ev { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px 14px 14px; overflow: hidden; }
-.ev-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-/* The date, the way a ticket carries it. */
-.ev-date { display: grid; justify-items: center; align-content: center; min-width: 46px; height: 46px; padding: 0 7px; border-radius: 6px; background: var(--bg); line-height: 1; }
-.ev-date b { font-size: 1.3rem; font-weight: 600; letter-spacing: -.02em; }
+/* Events: the date in a square, what's on beside it, then your answer and who's coming */
+.events { display: grid; gap: 12px; }
+.ev { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 18px var(--edge); overflow: hidden; }
+.ev-top { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.ev-date { display: grid; justify-items: center; align-content: center; min-width: 52px; height: 52px; padding: 0 8px; border-radius: 16px; background: var(--bg); line-height: 1; }
+.ev-date b { font-size: 1.3rem; font-weight: 400; letter-spacing: -.02em; }
 .ev-date.wide b { font-size: 1rem; }
-.ev-date span { margin-top: 3px; font-size: .66rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
-.ev-date.now { background: var(--ink); color: var(--on-ink); }
-.ev-date.now span { color: inherit; opacity: .75; }
-.ev-when { font-size: .84rem; color: var(--muted); }
-.ev-title { font-size: 1.05rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
-/* Where the stub tears off. */
-.ev-tear { position: relative; height: 0; margin: 2px -14px; border-top: 1.5px dashed var(--line); }
-.ev-tear::before, .ev-tear::after { content: ""; position: absolute; top: -8px; width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
-.ev-tear::before { left: -8px; }
-.ev-tear::after { right: -8px; }
-.ev-part { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; }
-.ev-part.long { display: grid; }
-.ev-part > span { font-size: .86rem; color: var(--muted); }
-.ev-part .seg button { min-height: 34px; padding: 0 14px; font-size: .86rem; }
+.ev-date span { margin-top: 4px; font-size: .74rem; color: var(--muted); }
+/* Today's is in blue */
+.ev-date.now b { color: var(--accent); }
+.ev-when { font-size: .88rem; color: var(--muted); }
+.ev-title { font-size: 1.125rem; font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.ev-tear { display: none; }
+/* The parts you can make: a track as wide as the answer above it */
+.ev-part { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.ev-part > span { font-size: .88rem; color: var(--muted); }
+.ev-part .seg button { min-height: 38px; font-size: .86rem; }
+/* Small on screen, a full-size tap */
+.ev-part .seg button::before { content: ""; position: absolute; inset: -4px 0; }
 
-/* Sheets */
+/* Sheets: one rounded panel that rises from the foot, a round button to shut it */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
 .sheet {
+  --field: var(--bg);
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 600px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
-  background: var(--bg); border: 1px solid var(--line); border-bottom: 0; border-radius: 8px 8px 0 0; outline: 0;
+  background: var(--surface); border: 0; border-radius: 28px 28px 0 0; outline: 0;
 }
 .sheet.rise { animation: rise .26s cubic-bezier(.2, .9, .3, 1); }
 .backdrop.rise { animation: dim .2s; }
 @keyframes rise { from { transform: translateY(28px); opacity: 0; } }
 @keyframes dim { from { opacity: 0; } }
-.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: 6px 20px; border-bottom: 1px solid var(--line); }
-.sheet-head h2 { font-size: 1rem; font-weight: 600; }
-.sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 18px max(20px, env(safe-area-inset-left, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); }
-@media (max-width: 480px) { .sheet-head { padding: 6px 16px; } .sheet-body { padding-left: 16px; padding-right: 16px; } }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 62px; padding: 14px 14px 4px 26px; }
+.sheet-head h2 { min-width: 0; font-size: 1.2rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 10px max(20px, env(safe-area-inset-left, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); }
 .sheet form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
-.hint { font-size: .86rem; color: var(--muted); }
+.hint { padding: 0 6px; font-size: .9rem; color: var(--muted); }
 
-.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
-.field-label { font-size: .8rem; font-weight: 500; color: var(--muted); }
+.field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+.field-label { padding: 0 6px; font-size: .9rem; color: var(--muted); }
+/* A field is a rounded well: white on the page, the page's grey on a sheet */
 input[type=text], select {
-  width: 100%; min-height: 46px; padding: 0 12px; background: var(--surface); color: var(--ink);
-  border: 1px solid var(--line-strong); border-radius: 6px; font-size: 16px;
+  width: 100%; min-height: 52px; padding: 0 16px; background: var(--field, var(--surface)); color: var(--ink);
+  border: 0; border-radius: 18px; font-size: 16px;
 }
-input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-input::placeholder { color: var(--muted); opacity: .8; }
+input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* A list to choose from looks like the fields beside it, with its own arrow at the right */
+select { appearance: none; -webkit-appearance: none; padding-right: 44px; text-overflow: ellipsis; }
+.select { position: relative; display: block; }
+.select svg { position: absolute; top: 50%; right: 16px; width: 14px; height: 14px; margin-top: -7px; color: var(--muted); pointer-events: none; }
+input::placeholder { color: var(--muted); opacity: 1; }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
-.seg.five button { min-height: 52px; line-height: 1.2; white-space: normal; }
+.seg.five { border-radius: 29px; }
+.seg.five button { min-height: 52px; border-radius: 26px; line-height: 1.2; white-space: normal; }
 .seg.five button:disabled { opacity: .35; cursor: default; }
 
-.people { border-top: 1px solid var(--line); }
-.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; border-bottom: 1px solid var(--line); }
+/* A grouped list: one rounded card, a row for each thing, a hairline between rows */
+.people { padding: 0 20px; background: var(--surface); border-radius: 24px; }
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; font-size: 1.125rem; line-height: 1.3; }
+.person + .person { border-top: 1px solid var(--line); }
 .person span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.person em { font-style: normal; color: var(--muted); font-size: .86rem; }
-.foot-links { display: flex; flex-wrap: wrap; gap: 6px 22px; }
+.person em { font-style: normal; color: var(--muted); font-size: .9rem; }
+.person .link { flex: none; }
+.foot-links { display: grid; padding: 0 20px; background: var(--surface); border-radius: 24px; }
+.foot-links .link { display: flex; align-items: center; min-height: 56px; padding: 8px 0; font-size: 1.125rem; font-weight: 400; line-height: 1.3; text-align: left; }
+.foot-links .link + .link { border-top: 1px solid var(--line); }
+.foot-links .link::after { inset: 0 -20px; }
+.foot-links .link.quiet { color: var(--ink); }
 
 /* Home and joining */
-.lead { max-width: 21ch; font-size: 1.55rem; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.lead { max-width: 21ch; font-size: 1.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -.015em; overflow-wrap: anywhere; }
 .lead + p { margin-top: 10px; color: var(--muted); max-width: 34ch; }
-.rows { border-top: 1px solid var(--line); }
-.rows a { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0 2px; border-bottom: 1px solid var(--line); text-decoration: none; font-weight: 500; color: var(--ink); }
-.rows a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rows a svg { color: var(--muted); flex: none; }
 form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .names { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* First run: one question a screen. The screen fills the phone so the way on,
    and the small print, sit at the foot. */
-.onb { display: flex; flex-direction: column; gap: 24px; min-height: calc(100dvh - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
-.onb .lead { max-width: 16ch; margin: 0 auto; text-align: center; font-size: 1.9rem; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
-.onb .ask { font-size: 1.55rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
+.onb { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+.onb .lead { max-width: 20ch; margin: 8px 6px 0; text-wrap: balance; }
+.onb .ask { padding: 0 6px; font-size: 1.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -.015em; }
 .onb form.stack { gap: 14px; }
-.onb form.stack input { min-height: 54px; font-size: 18px; }
-.onb .btn { min-height: 52px; font-size: 1rem; }
+.onb form.stack input { min-height: 56px; font-size: 18px; }
 .onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.inv .kick { margin-bottom: 4px; font-size: .95rem; font-weight: 500; color: var(--muted); }
-.inv .ask { font-size: 1.9rem; line-height: 1.15; letter-spacing: -.02em; overflow-wrap: anywhere; }
-.inv .who { margin-top: 10px; color: var(--muted); overflow-wrap: anywhere; }
-.inv .wk-cap { padding: 0 6px; font-size: .84rem; color: var(--muted); }
+.inv .kick { margin: 8px 0 2px; padding: 0 6px; font-size: 1rem; color: var(--muted); }
+.inv .ask { overflow-wrap: anywhere; }
+.inv .who { margin-top: 8px; padding: 0 6px; color: var(--muted); overflow-wrap: anywhere; }
+.inv .wk-cap { padding: 0 8px; font-size: .9rem; color: var(--muted); }
 .inv .wk-say.none { font-weight: 400; color: var(--muted); }
 .inv .wk-say.none::before { background: var(--line-strong); }
 .inv .end { gap: 14px; }
-.inv .mine { display: grid; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
-.inv .mine p { font-size: .9rem; color: var(--muted); }
-.inv .names .btn { min-height: 44px; font-size: .95rem; }
+.inv .mine { display: grid; gap: 10px; padding-top: 6px; }
+.inv .mine p { padding: 0 6px; font-size: .9rem; color: var(--muted); }
+.inv .names .btn { min-height: 44px; padding: 0 18px; font-size: .95rem; }
 .inv .legal { margin-top: -4px; }
 .onb .groups-acts { grid-template-columns: 1fr 1fr; }
-/* A step sits in the middle, a little high so the keyboard clears it. */
-.onb .mid { flex: 1; display: flex; flex-direction: column; gap: 24px; text-align: center; }
-.onb .mid::before { content: ''; flex: 1; }
-.onb .mid::after { content: ''; flex: 2.5; }
-.onb .mid.even::after { flex: 1; }
-.onb .mid input { text-align: center; }
-.bad { color: var(--neg); font-size: .86rem; }
+.onb .groups-acts .btn { padding: 0 10px; }
+/* A step sits at the top, under its question, so the keyboard clears it. */
+.onb .mid { flex: 1; display: flex; flex-direction: column; gap: 20px; padding-top: 8px; }
+.bad { padding: 0 6px; color: var(--neg); font-size: .9rem; }
 /* A join code: four letters, typed into one field drawn as four boxes. */
 .code-in { position: relative; display: block; }
 .code-in input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 18px; }
 .cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.cells i { display: grid; place-items: center; height: 72px; font-style: normal; font-size: 2rem; font-weight: 600; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; }
-.code-in:focus-within .cells i.at { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.cells i { display: grid; place-items: center; height: 72px; font-style: normal; font-size: 2rem; font-weight: 400; background: var(--field, var(--surface)); border-radius: 20px; }
+.code-in:focus-within .cells i.at { box-shadow: inset 0 0 0 2px var(--accent); }
 .btn:disabled { opacity: .4; }
 .invite-foot { display: flex; justify-content: center; }
 
 /* A weekend in miniature: a bar a friend for each slot, and the slot that suits everyone. */
-.wk { display: grid; gap: 14px; padding: 16px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+.wk { display: grid; gap: 14px; padding: 18px 12px 18px; background: var(--surface); border-radius: 24px; }
 .wk-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-.wk-col { display: grid; gap: 6px; padding: 10px 6px; border: 1.5px solid transparent; border-radius: 6px; }
+.wk-col { display: grid; gap: 6px; padding: 10px 6px; border: 1.5px solid transparent; border-radius: 14px; }
 .wk-col.best { border-color: var(--ink); }
-.wk-col b { display: block; margin-bottom: 4px; font-size: .74rem; font-weight: 600; line-height: 1.25; text-align: center; }
+.wk-col b { display: block; margin-bottom: 4px; font-size: .76rem; font-weight: 500; line-height: 1.25; text-align: center; }
 .wk-col b span { display: block; font-weight: 400; color: var(--muted); }
-.wk-col i { height: 16px; border-radius: 4px; background: var(--line); animation: wk-in .45s both; animation-delay: calc(var(--c) * 80ms + var(--r) * 40ms + 120ms); }
+.wk-col i { height: 16px; border-radius: 5px; background: var(--line); animation: wk-in .45s both; animation-delay: calc(var(--c) * 80ms + var(--r) * 40ms + 120ms); }
 .wk-col i.f { background: var(--pos); }
 .wk-col i.m { background: var(--mid); }
-.wk-say { display: flex; align-items: center; gap: 8px; padding: 0 6px; font-size: .9rem; font-weight: 600; }
-.wk-say::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); }
+.wk-say { display: flex; align-items: center; gap: 8px; padding: 0 8px; font-size: .92rem; font-weight: 500; }
+.wk-say::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--pos); }
 @keyframes wk-in { from { opacity: 0; transform: scaleX(.4); } }
 
-/* Two tall tiles share the screen, so the choice is the page. */
-.pick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.pick button { appearance: none; display: grid; justify-items: center; gap: 4px; padding: 28px 18px 26px; text-align: center; color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; }
-.pick button:active { background: color-mix(in srgb, var(--ink) 6%, var(--surface)); }
-.pick .ic { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border-radius: 50%; background: var(--ink); color: var(--on-ink); }
+/* Two tiles, one under the other: the choice is the page. */
+.pick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.pick button { appearance: none; display: grid; justify-items: center; gap: 4px; padding: 30px 18px 28px; text-align: center; color: var(--ink); background: var(--surface); border: 0; border-radius: 24px; }
+.pick button:active { background: var(--key); }
+.pick .ic { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border-radius: 50%; background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim); color: var(--ink); }
 .pick .ic svg { width: 24px; height: 24px; }
 /* Join shows what a code looks like. */
 .pick .eg { display: flex; align-items: center; gap: 6px; height: 54px; margin-bottom: 12px; }
-.pick .eg i { display: grid; place-items: center; width: 36px; height: 44px; font-style: normal; font-size: 1.1rem; font-weight: 600; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 6px; background: color-mix(in srgb, var(--ink) 4%, var(--surface)); }
-.pick strong { display: block; font-size: 1.4rem; font-weight: 600; line-height: 1.2; letter-spacing: -.015em; }
+.pick .eg i { display: grid; place-items: center; width: 36px; height: 44px; font-style: normal; font-size: 1.1rem; font-weight: 500; color: var(--muted); border-radius: 12px; background: var(--bg); }
+.pick strong { display: block; font-size: 1.25rem; font-weight: 400; line-height: 1.25; letter-spacing: -.01em; }
 .pick small { display: block; font-size: .95rem; color: var(--muted); }
 
 /* A group on the home screen: its weekend at a glance. */
-.gcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.gcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 16px 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; color: var(--ink); }
-.gcard:active { background: color-mix(in srgb, var(--ink) 5%, var(--surface)); }
-.gcard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 6px; }
-.gcard-head strong { display: block; font-size: 1.15rem; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gcard-head small { display: block; font-size: .84rem; color: var(--muted); }
-.gcard-head svg { flex: none; color: var(--muted); }
+.gcards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.gcard { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 18px 12px 18px; background: var(--surface); border-radius: 24px; text-decoration: none; color: var(--ink); }
+.gcard:active { background: var(--key); }
+.gcard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 8px; }
+/* How many and when as the small label, the group's name large under it */
+.gcard-head > span { display: flex; flex-direction: column-reverse; min-width: 0; }
+.gcard-head strong { display: block; font-size: 1.4rem; font-weight: 400; line-height: 1.25; letter-spacing: -.015em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcard-head small { display: block; font-size: .9rem; color: var(--muted); }
+.gcard-head svg { flex: none; color: var(--line-strong); }
 .gcard .wk-col i { height: 10px; border-radius: 3px; animation-duration: .35s; animation-delay: calc(var(--c) * 45ms + var(--r) * 20ms + 60ms); }
 .gcard .wk-say.none { font-weight: 400; color: var(--muted); }
 .gcard .wk-say.none::before { background: var(--line-strong); }
 
 .legal { margin-top: 4px; padding: 10px 0; text-align: center; font-size: .8rem; color: var(--muted); }
-.legal a { color: inherit; }
-a.person { color: inherit; text-decoration: none; }
-/* About: who made this and which build it is, then the ways out. */
-.about-id { display: grid; justify-items: center; gap: 4px; padding: 6px 0 18px; text-align: center; }
-.about-id img { margin-bottom: 10px; border-radius: 15px; }
-.about-id p, .about-foot { margin: 0; }
-/* About is a page of its own: it fills the screen and Back leaves it */
-.sheet.page { top: 0; max-width: none; max-height: none; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); border: 0; border-radius: 0; }
+.legal a { position: relative; color: inherit; }
+/* Small on screen, a full-size tap */
+.legal a::after { content: ""; position: absolute; inset: -14px -8px; }
+/* A page of its own (About, You and the group): it fills the screen and Back leaves it */
+.sheet.page { --field: var(--surface); top: 0; max-width: none; max-height: none; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); border-radius: 0; background: var(--bg); }
 .sheet.page.rise { animation: dim .18s; }
 .sheet.page > * { width: 100%; max-width: 600px; margin-inline: auto; }
-.sheet-head.back { justify-content: flex-start; gap: 4px; padding-left: 6px; }
-.sheet-head .back { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; background: none; border: 0; color: var(--ink); }
-.sheet.page .sheet-body { flex: 1; display: flex; flex-direction: column; padding-top: 36px; }
+.sheet-head.back { justify-content: flex-start; min-height: 56px; margin-top: 8px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
+.sheet-head.back h2 { font-size: 1.35rem; letter-spacing: -.01em; line-height: 1.3; }
+.sheet.page .sheet-body { flex: 1; display: flex; flex-direction: column; gap: 18px; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
 .sheet.page .about-foot { margin-top: auto; }
-/* About's links: plain centred text, no rows */
-.about-links { display: grid; justify-items: center; text-align: center; }
-.about-links a, .about-links button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 10px; background: none; border: 0; font-size: .95rem; color: var(--ink); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 4px; }
-.about-links [hidden] { display: none; }
-.about-links .about-mail { font-weight: 600; }
-.about-legal { display: flex; align-items: center; justify-content: center; }
-.about-legal i { flex: none; width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
-.about-links .about-upd { min-height: 40px; margin-bottom: 10px; padding: 0 18px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); border-radius: 99px; text-decoration: none; }
-.about-upd span { color: var(--muted); }
-.about-upd span:empty { display: none; }
-.about-name { font-size: 1.4rem; font-weight: 600; letter-spacing: -.02em; }
+/* Room under the last row, so a message at the foot of the screen never sits on it */
+.sheet.page .sheet-body.foot-room { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
+/* About: who this is, then rounded lists, a row for each thing, with a hairline between them */
+.about-id { display: grid; justify-items: center; gap: 4px; padding: 14px 0 10px; text-align: center; }
+.about-id img { margin-bottom: 10px; border-radius: 15px; }
+.about-id p, .about-foot { margin: 0; }
+.about-name { font-size: 1.4rem; font-weight: 500; letter-spacing: -.02em; line-height: 1.2; }
 .about-tag { color: var(--muted); }
-.about-ver { margin-top: 8px !important; padding: 4px 12px; border: 1px solid var(--line); border-radius: 99px; font-size: .82rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.about-links { display: grid; padding: 0 20px; background: var(--surface); border-radius: 24px; }
+.about-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; margin: 0; padding: 8px 0; font-size: 1.125rem; line-height: 1.3; color: var(--ink); text-align: left; text-decoration: none; }
+.about-row + .about-row { border-top: 1px solid var(--line); }
+.about-row > span { min-width: 0; overflow-wrap: anywhere; }
+.about-row small { display: block; font-size: .9rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-right: 3px; border: solid var(--line-strong); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
 .about-foot { padding-top: 16px; text-align: center; font-size: .8rem; color: var(--muted); }
-a.person:active { background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.lone { display: grid; gap: 10px; justify-items: start; margin-top: 12vh; }
-.lone h1 { font-size: 1.3rem; font-weight: 600; line-height: 1.3; }
+/* Nothing to show: what went wrong in a line or two, and the way on */
+.lone { display: grid; gap: 10px; justify-items: start; margin-top: 8px; padding: 0 6px; }
+.lone h1 { font-size: 1.5rem; font-weight: 400; line-height: 1.25; letter-spacing: -.01em; }
 .lone p { color: var(--muted); }
+.lone .btn { margin-top: 12px; }
 
 #toast {
   position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20;
-  background: var(--ink); color: var(--on-ink); border-radius: 6px; padding: 10px 14px; font-size: .9rem; font-weight: 600;
+  background: var(--ink); color: var(--on-ink); border-radius: 22px; padding: 11px 18px; font-size: .92rem; font-weight: 500; text-align: center;
   opacity: 0; pointer-events: none; transition: opacity .15s; max-width: calc(100vw - 32px);
 }
 #toast.show { opacity: 1; }
@@ -438,14 +519,18 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   };
 
   const GEAR = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h9M16 6h1M3 14h1M8 14h9"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="14" r="2"/></svg>';
-  const BACK = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 4.5L7 10l5.5 5.5"/></svg>';
+  const BACK = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12h-17M10.5 5 3.5 12l7 7"/></svg>';
+  const DOTS = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="currentColor"><circle cx="10" cy="3.6" r="1.7"/><circle cx="10" cy="10" r="1.7"/><circle cx="10" cy="16.4" r="1.7"/></svg>';
+  const SHUT = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 5l10 10M15 5 5 15"/></svg>';
+  const INFO = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.7" r=".5" fill="currentColor"/></svg>';
+  const ADD = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.7"/><path d="M3.5 19.5c.7-3.3 3.2-5.2 6.5-5.2 1.5 0 2.8.4 3.9 1.1M18.5 13.5v6M15.5 16.5h6"/></svg>';
   const DOWN = '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg>';
   const ANSWERS = [['f', 'Free'], ['m', 'Maybe'], ['b', 'Busy']];
   const REPLIES = [['in', 'Going'], ['maybe', 'Maybe'], ['out', 'No']];
 
   let saved = ls.get('muster.groups', []);
   let G = null;            // the open group: { id, me, state, queue, gone, failed, offline }
-  let ui = { open: {}, more: false, sheet: null, confirm: null };
+  let ui = { open: {}, more: false, menu: false, sheet: null, confirm: null };
   let view = '', drawn = null;
 
   // ---- Keeping in step with the server ----
@@ -554,7 +639,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function route() {
     const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
     const j = location.pathname.match(/^\/j\/([A-Za-z]{4})\/?$/);
-    ui = { open: {}, more: false, sheet: null, confirm: null };
+    ui = { open: {}, more: false, menu: false, sheet: null, confirm: null };
     // A join code's short link: find its group, then carry on as if its link had been opened.
     if (j) { G = { id: '', code: j[1].toUpperCase(), me: null, state: null, queue: [] }; seek(); }
     // A group link that's the wrong length: say so, rather than show the home screen.
@@ -674,7 +759,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   // ---- Screens ----
 
   const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
-  const ABOUT = '<button class="link quiet" data-act="about">About</button>';
+  const ABOUT = `<button class="icon-btn" data-act="about" aria-label="About">${INFO}</button>`;
   const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a>${ABOUT}</header>`;
 
   // The terms, privacy and the way to us live in About. The screens that begin
@@ -800,8 +885,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const events = s.plans.filter(p => !L.isPast(p.w, L.planSlots(p).at(-1), now)).sort((a, b) => (a.w < b.w ? -1 : a.w > b.w ? 1 : a.i - b.i));
     return `
       <header class="top">
-        <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><h1 class="mark">${esc(s.group.name)}</h1><span class="mark-n" aria-label="${s.members.length} ${s.members.length === 1 ? 'person' : 'people'}">${s.members.length}</span></div>
-        <div class="top-right"><button class="link" data-act="invite">Invite</button><button class="icon-btn" data-act="settings" aria-label="You and the group">${GEAR}</button></div>
+        <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><div class="top-title"><h1 class="mark">${esc(s.group.name)}</h1><p class="mark-n">${s.members.length} ${s.members.length === 1 ? 'person' : 'people'}</p></div></div>
+        <div class="top-right"><button class="icon-btn" data-act="invite" aria-label="Invite">${ADD}</button><button class="icon-btn" data-act="menu" aria-label="More" aria-haspopup="menu" aria-expanded="${!!ui.menu}">${DOTS}</button></div>
+        ${ui.menu ? `<div class="scrim" data-act="menu"></div><div class="menu" role="menu"><button class="menu-row" role="menuitem" data-act="settings">${GEAR}<span>You and the group</span></button><button class="menu-row" role="menuitem" data-act="about">${INFO}<span>About</span></button></div>` : ''}
       </header>
       ${G.offline ? `<p class="status">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
       <section class="section">
@@ -809,7 +895,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         ${events.length ? `<div class="events">${events.map(event).join('')}</div>` : `<p class="empty">No events yet.</p>`}
       </section>
       ${weekList.map(w => week(w, now)).join('')}
-      ${ui.more ? '' : `<div><button class="link" data-act="more">Show later weekends</button></div>`}`;
+      ${ui.more ? '' : `<div class="more-weeks"><button class="link" data-act="more">Show later weekends</button></div>`}`;
   }
 
   // Where the knob sits: 0, 1 or 2, or '-' before you've answered.
@@ -818,7 +904,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function pips(r, n, k) {
     const gap = n > 12 ? 0 : .22, parts = [['f', r.f.length], ['m', r.m.length], ['b', r.b.length], ['', r['-'].length]];
     let x = 0, out = '';
-    for (const [c, q] of parts) for (let j = 0; j < q; j++, x++) out += `<rect class="${c}" x="${x}" width="${1 - gap}" height="1"/>`;
+    for (const [c, q] of parts) for (let j = 0; j < q; j++, x++) out += `<rect class="${c}" x="${x}" width="${1 - gap}" ${c === 'm' ? 'y=".5" height=".5"' : 'height="1"'}/>`; // a maybe is half as tall, so it isn't told by colour alone
     return `<svg class="pips" data-k="p:${k}" data-fx="pop" data-sig="${parts.map(p => p[1]).join('.')}" viewBox="0 0 ${n - gap} 1" width="${Math.min(n * 11 - 2, 72)}" height="6" preserveAspectRatio="none" aria-hidden="true">${out}</svg>`;
   }
 
@@ -839,7 +925,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const rows = openSlots(w, now).map(i => {
       const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i], k = w + ':' + i;
       const all = n > 1 && r.f.length === n;
-      const count = all ? `<span class="slot-n all"><span class="live"></span>Everyone's free</span>`
+      const count = all ? `<span class="slot-n all"><span class="live"></span><span>Everyone's free</span></span>`
         : `<span class="slot-n">${pips(r, n, k)}<span><b data-k="n:${k}" data-fx="tick" data-sig="${r.f.length}">${r.f.length}</b> free<span class="vh"> of ${n}${r.m.length ? `, ${r.m.length} maybe` : ''}</span></span></span>`;
       const who = open ? `<div class="who-box" data-k="w:${k}">${roster(k, [['in', 'Free', r.f], ['maybe', 'Maybe', r.m], ['out', 'Busy', r.b], ['none', 'No answer', r['-']]])}<button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
       return `<div class="slot">
@@ -901,7 +987,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { if (el.value !== el.defaultValue) typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
     const inside = !!at && sheetRoot.contains(at), up = sheetRoot.firstChild ? '' : ' rise';
-    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}${sh.kind === 'about' ? ' page' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
+    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}${sh.kind === 'about' || sh.kind === 'settings' ? ' page' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -917,7 +1003,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     if (!(history.state && history.state.sheet)) history.pushState({ sheet: 1 }, '');
   }
   function closeSheet() { ui.sheet = null; ui.confirm = null; renderSheet(); if (history.state && history.state.sheet) history.back(); }
-  const sheetHead = (t, shut = 'Done') => `<div class="sheet-head"><h2 id="sheet-title">${t}</h2><button class="link" data-act="close">${shut}</button></div>`;
+  const sheetHead = (t, shut = 'Done') => `<div class="sheet-head"><h2 id="sheet-title">${t}</h2><button class="icon-btn" data-act="close" aria-label="${shut}">${SHUT}</button></div>`;
+  // A sheet that is a page of its own has a round Back with its name beside it.
+  const pageHead = t => `<div class="sheet-head back"><button class="icon-btn" data-act="close" aria-label="Back">${BACK}</button><h2 id="sheet-title">${t}</h2></div>`;
 
   // The group's code, large enough to read out across a room.
   function inviteSheet(sh) {
@@ -939,19 +1027,20 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   const WEB_VERSION = '__VERSION__';
   function aboutSheet() {
     const v = appVersion || (WEB_VERSION.startsWith('__') ? '' : WEB_VERSION);
-    return `<div class="sheet-head back"><button class="back" data-act="close" aria-label="Back"><svg width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2 2 8l6 6"/></svg></button><h2 id="sheet-title">About</h2></div>
+    return `${pageHead('About')}
       <div class="sheet-body">
         <div class="about-id">
           <img src="icons/icon-192.png" width="64" height="64" alt="" onerror="this.hidden=true">
           <p class="about-name">Muster</p>
           <p class="about-tag">See when everyone's free this weekend.</p>
-          ${v ? `<p class="about-ver">Version ${esc(v)}</p>` : ''}
         </div>
+        ${v ? `<div class="about-links"><p class="about-row"><span>Version<small>${esc(v)}</small></span></p></div>` : ''}
         <div class="about-links">
-      <a class="about-mail" href="mailto:support@teloone.au?subject=Muster">support@teloone.au</a>
-      <div class="about-legal"><a href="https://teloone.au/apps/muster/privacy/" rel="noreferrer">Privacy policy</a><i aria-hidden="true"></i><a href="https://teloone.au/apps/muster/terms/" rel="noreferrer">Terms of use</a></div>
-      ${getApp ? `<a href="/app">Get the Android app</a>` : ''}
-    </div>
+          <a class="about-row" href="mailto:support@teloone.au?subject=Muster"><span>Contact support<small>support@teloone.au</small></span></a>
+          <a class="about-row" href="https://teloone.au/apps/muster/privacy/" rel="noreferrer">Privacy policy</a>
+          <a class="about-row" href="https://teloone.au/apps/muster/terms/" rel="noreferrer">Terms of use</a>
+          ${getApp ? `<a class="about-row" href="/app">Get the Android app</a>` : ''}
+        </div>
         <p class="about-foot">Made in Adelaide by Telo One</p>
       </div>`;
   }
@@ -961,7 +1050,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return `${sheetHead('New event', 'Cancel')}
       <div class="sheet-body"><form data-form="event" autocomplete="off">
         <label class="field"><span class="field-label">What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
-        <label class="field"><span class="field-label">Weekend</span><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}</option>`).join('')}</select></label>
+        <label class="field"><span class="field-label">Weekend</span><span class="select"><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}</option>`).join('')}</select>${DOWN}</span></label>
         <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When, one or more">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.sel.includes(i)}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
         <button class="btn wide">Post</button>
       </form></div>`;
@@ -973,8 +1062,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const sure = ui.confirm === 'remove:' + m.id;
       return `<div class="person"><span>${esc(m.name)}${m.id === G.me ? ' <em>you</em>' : ''}</span>${m.id === G.me ? '' : `<button class="link quiet" data-act="remove" data-id="${m.id}">${sure ? 'Tap again to remove' : 'Remove'}</button>`}</div>`;
     }).join('');
-    return `${sheetHead('You and the group')}
-      <div class="sheet-body">
+    return `${pageHead('You and the group')}
+      <div class="sheet-body foot-room">
         <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required autocapitalize="words" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
@@ -1096,6 +1185,13 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     },
     shareCode() { if (ui.sheet && ui.sheet.code) send(`Join ${G.state.group.name} on Muster with the code ${ui.sheet.code}`, `${SITE}/j/${ui.sheet.code}`); },
     shareLink() { send(`${G.state.group.name}: mark when you're free`); },
+    // The three dots: Invite and the group's settings drop from under them.
+    menu() {
+      ui.menu = !ui.menu; render();
+      const m = app.querySelector('.menu');
+      if (m && m.animate && !calm.matches) m.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 140, easing: 'ease-out' });
+      const el = app.querySelector(m ? '.menu-row' : '.icon-btn[data-act="menu"]'); if (el) el.focus({ preventScroll: true });
+    },
     settings() { openSheet({ kind: 'settings' }); },
     about() { openSheet({ kind: 'about' }); },
     close() { closeSheet(); },
@@ -1250,6 +1346,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const el = e.target.closest('[data-act]');
     if (!el || el.disabled) return;
     const act = acts[el.dataset.act];
+    // Choosing from the menu puts it away.
+    if (ui.menu && el.dataset.act !== 'menu') { ui.menu = false; render(); }
     if (act) act(el.dataset);
   });
   document.addEventListener('submit', e => {
@@ -1284,6 +1382,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && ui.sheet) closeSheet();
+    else if (e.key === 'Escape' && ui.menu) acts.menu();
     // On a phone the keyboard's done key puts the keyboard away. Only Post posts,
     // once the day has been looked at.
     if (e.key === 'Enter' && !e.isComposing && (shell || matchMedia('(pointer: coarse)').matches) && e.target.matches && e.target.matches('form[data-form="event"] input[name=text]')) { e.preventDefault(); e.target.blur(); }
