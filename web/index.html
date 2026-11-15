@@ -215,13 +215,6 @@ a { color: inherit; }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 6px; }
 .sec-head h2 { font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--muted); }
 .sec-head .muted { font-size: .9rem; }
-.sec-side { display: flex; align-items: center; gap: 10px; }
-/* A weekend's five slots as bars: the taller, the more of the group is free. */
-.sky { display: flex; align-items: flex-end; gap: 2px; height: 18px; }
-.sky i { position: relative; width: 5px; height: 100%; border-radius: 2px; background: color-mix(in srgb, var(--ink) 14%, transparent); overflow: hidden; }
-.sky i.gap { margin-left: 3px; }
-.sky i.past { opacity: .45; }
-.sky b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px; background: var(--pos); transform-origin: bottom; }
 .card { background: var(--surface); border-radius: 24px; }
 /* Grey on a card or a sheet: a button, a pressed card or a raised pill there is a step
    lighter than on the page, so it still shows against the card in the dark */
@@ -275,7 +268,7 @@ a { color: inherit; }
 .slot { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) clamp(150px, 44vw, 174px); align-items: center; gap: 0 10px; padding: 10px var(--edge) 10px 0; }
 .slot + .slot::before { content: ""; position: absolute; top: 0; left: var(--edge); right: var(--edge); border-top: 1px solid var(--line); }
 .slot-info { appearance: none; display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 44px; padding: 0 0 0 var(--edge); background: none; border: 0; text-align: left; align-content: center; }
-.slot-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; font-weight: 500; }
+.slot-name { display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px; font-size: 1.06rem; font-weight: 500; }
 .slot-name svg { color: var(--muted); transition: transform .15s; }
 .slot-info[aria-expanded="true"] .slot-name svg { transform: rotate(180deg); }
 .slot-n { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 7px; font-size: .86rem; color: var(--muted); }
@@ -290,26 +283,28 @@ a { color: inherit; }
 .live { position: relative; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--pos); }
 .live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--pos); animation: ring 2.4s ease-out infinite; }
 @keyframes ring { from { opacity: .55; transform: scale(1); } 70%, to { opacity: 0; transform: scale(3.2); } }
-/* Coming up: every later weekend as one row of a grouped card, its dates under its name and
-   its five bars at the right. A row opens in place to that weekend's nights and days. */
-.up { position: relative; }
-.up + .up::before { content: ""; position: absolute; top: 0; left: var(--edge); right: var(--edge); border-top: 1px solid var(--line); }
-.up-head { appearance: none; display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px var(--edge); background: none; border: 0; text-align: left; }
-/* Pressed, a row fills like the app's other rows, keeping to the card's corners at its ends */
-.up-head:active { background: var(--key); }
-.up:first-child > .up-head { border-radius: 24px 24px 0 0; }
-.up:last-child > .up-head[aria-expanded="false"] { border-radius: 0 0 24px 24px; }
-.up:only-child > .up-head[aria-expanded="false"] { border-radius: 24px; }
-.up-head:focus-visible { outline-offset: -4px; border-radius: 24px; }
-.up-text { flex: 1; display: grid; min-width: 0; }
-.up-name { font-size: 1.06rem; line-height: 1.3; }
-/* The open one's name is a little heavier, and nothing is ruled between it and its rows */
-.up-head[aria-expanded="true"] .up-name { font-weight: 500; }
-.up-when { margin-top: 2px; font-size: .9rem; line-height: 1.3; font-variant-numeric: tabular-nums; color: var(--muted); }
-/* Something of this weekend is still yours to answer */
-.owed { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-.up-head > svg { flex: none; color: var(--muted); transition: transform .15s; }
-.up-head[aria-expanded="true"] > svg { transform: rotate(180deg); }
+/* The weekends, a tile each, in a strip that scrolls sideways out to the screen's edges:
+   the month over the dates, every tile the same size. The open one is filled; this
+   weekend, when it isn't the open one, is outlined; a dot says some of it is yours to answer. */
+.strip { --gut: max(16px, env(safe-area-inset-left, 0px)); display: flex; gap: 8px; margin: -4px calc(-1 * var(--gut)); padding: 4px var(--gut); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+.strip::-webkit-scrollbar { display: none; }
+.tile { position: relative; flex: none; appearance: none; display: grid; place-content: center; justify-items: center; gap: 3px; width: 76px; height: 70px; padding: 0; background: var(--key); border: 0; border-radius: 22px; color: var(--ink); }
+.tile:active { background: var(--key-down); }
+.tile-m { font-size: .7rem; line-height: 1.2; letter-spacing: .08em; text-transform: uppercase; color: color-mix(in srgb, currentColor 72%, transparent); }
+/* Two months on one tile sit a little closer, to keep inside it */
+.tile-m.two { letter-spacing: .03em; white-space: nowrap; }
+.tile-d { font-size: 1.1rem; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+.tile.now { box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+.tile[aria-selected="true"] { background: var(--ink); box-shadow: none; color: var(--bg); }
+.owed { position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.tile[aria-selected="true"] .owed { background: var(--bg); }
+/* The open weekend: its name large, its dates at the right, then a card for each day */
+.days { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.wk-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 6px 2px; }
+.wk-head h2 { font-size: 1.6rem; font-weight: 400; line-height: 1.25; letter-spacing: -.015em; }
+.wk-head span { flex: none; font-size: .95rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.day { padding: 14px 0 4px; }
+.day-name { padding: 0 var(--edge) 2px; font-size: .95rem; font-weight: 400; color: var(--muted); }
 .who-box { grid-column: 1 / -1; display: grid; justify-items: start; gap: 8px; padding: 6px 0 6px var(--edge); }
 
 /* Everyone by name, and how they answered: filled is yes, dashed is maybe,
@@ -544,7 +539,7 @@ a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-ri
 <div id="sheet"></div>
 <div class="menu pick-menu" id="pickMenu" role="menu" hidden></div>
 <div id="toast" role="status"></div>
-<script src="lib.js?v=2"></script>
+<script src="lib.js?v=3"></script>
 <script>
 if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
@@ -586,7 +581,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   let saved = ls.get('muster.groups', []);
   let G = null;            // the open group: { id, me, state, queue, gone, failed, offline }
-  let ui = { open: {}, week: null, shut: null, menu: false, sheet: null, confirm: null };
+  let ui = { open: {}, week: null, menu: false, sheet: null, confirm: null };
   let view = '', drawn = null;
 
   // ---- Keeping in step with the server ----
@@ -695,10 +690,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function route() {
     const m = location.pathname.match(/^\/g\/([A-Za-z0-9_-]{22})\/?$/);
     const j = location.pathname.match(/^\/j\/([A-Za-z]{4})\/?$/);
-    ui = { open: {}, week: null, shut: null, menu: false, sheet: null, confirm: null };
-    // With this weekend nearly over (two or fewer of its nights and days left), the next is
-    // the one being planned: it starts open.
-    { const [first, next] = L.weeks(new Date(), 2); if (openSlots(first).length <= 2) ui.week = next; }
+    ui = { open: {}, week: null, menu: false, sheet: null, confirm: null };
+    // This weekend is the one open to begin with.
+    ui.week = L.weekKey(new Date());
     // A join code's short link: find its group, then carry on as if its link had been opened.
     if (j) { G = { id: '', code: j[1].toUpperCase(), me: null, state: null, queue: [] }; seek(); }
     // A group link that's the wrong length: say so, rather than show the home screen.
@@ -765,7 +759,25 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     drawn = html;
     const was = stage, old = snap();
     stage = view + '|' + (view === 'home' ? step() : G ? G.id : '');
-    app.innerHTML = html;
+    // The strip of weekends, while the same board is drawn again: if nothing in it has changed
+    // it is left standing and the rest is drawn round it, so a finger moving it isn't cut
+    // short; if it has, it keeps its place and the tile that had the keyboard gets it back.
+    // Arriving at a board, the open tile is brought into sight instead.
+    const strip0 = stage === was ? app.querySelector('.strip') : null, sx = strip0 ? strip0.scrollLeft : null;
+    const held = strip0 && strip0.contains(document.activeElement) ? document.activeElement.id : '';
+    const next = strip0 ? document.createElement('template') : null;
+    if (next) next.innerHTML = html;
+    const strip1 = next ? [...next.content.children].find(n => n.classList.contains('strip')) : null;
+    if (strip1 && strip1.outerHTML === strip0.outerHTML) {
+      const kids = [...next.content.childNodes], k = kids.indexOf(strip1);
+      [...app.childNodes].forEach(n => { if (n !== strip0) n.remove(); });
+      strip0.before(...kids.slice(0, k)); strip0.after(...kids.slice(k + 1));
+    } else {
+      app.innerHTML = html;
+      const strip = app.querySelector('.strip');
+      if (strip && sx != null) { strip.scrollLeft = sx; const el = held && document.getElementById(held); if (el) el.focus({ preventScroll: true }); }
+      else if (strip) { const on = strip.querySelector('[aria-selected="true"]'); if (on) inView(on); }
+    }
     move(old, stage !== was);
   }
 
@@ -787,7 +799,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     // A new screen comes in a piece at a time.
     if (fresh) {
       [...app.children].forEach((el, n) => el.animate([{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: Math.min(n, 6) * 45, easing: EASE, fill: 'backwards' }));
-      app.querySelectorAll('[data-fx="bar"]').forEach((el, n) => el.animate([{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: 420, delay: 160 + Math.min(n, 20) * 22, easing: EASE, fill: 'backwards' }));
       return;
     }
     const els = [...app.querySelectorAll('[data-k]')], by = new Map();
@@ -800,12 +811,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     for (const el of els) {
       const d = by.get(el), fx = el.dataset.fx;
       if (!d) {
-        if (fx === 'bar') el.animate([{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: 360, easing: EASE });
-        else if (!fx) el.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: Math.min(born++, 14) * 16, easing: EASE, fill: 'backwards' });
-        continue;
-      }
-      if (fx === 'bar') {
-        if (d.r.height && Math.abs(d.o.r.height - d.r.height) > .5) el.animate([{ transform: `scaleY(${d.o.r.height / d.r.height})` }, { transform: 'none' }], { duration: 380, easing: EASE });
+        if (!fx) el.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 240, delay: Math.min(born++, 14) * 16, easing: EASE, fill: 'backwards' });
         continue;
       }
       // Inside something that itself moved, only the difference is this piece's own.
@@ -943,7 +949,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function board() {
     const s = G.state, now = new Date();
-    const [first, ...later] = L.weeks(now, WEEKS);
+    const list = L.weeks(now, WEEKS).filter(w => openSlots(w, now).length), at = list.includes(ui.week) ? ui.week : list[0];
     const events = s.plans.filter(p => !L.isPast(p.w, L.planSlots(p).at(-1), now)).sort((a, b) => (a.w < b.w ? -1 : a.w > b.w ? 1 : a.i - b.i));
     return `
       <header class="top">
@@ -956,8 +962,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <div class="sec-head"><h2>Events</h2><button class="link" data-act="event">New event</button></div>
         ${events.length ? `<div class="events">${events.map(event).join('')}</div>` : `<p class="empty">No events yet.</p>`}
       </section>
-      ${week(first, now)}
-      ${comingUp(later, now)}`;
+      ${strip(list, at, now)}
+      ${at ? days(at, now) : ''}`;
   }
 
   // Where the knob sits: 0, 1 or 2, or '-' before you've answered.
@@ -982,63 +988,50 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     }).join('')}${all.length > CAP ? `<li class="more"><button data-act="all" data-key="${key}" aria-expanded="${open}">${open ? 'Less' : `+${all.length - show.length}`}</button></li>` : ''}</ul>`;
   }
 
-  // A weekend's rows: one for each night and day still to come, with your answer beside it.
-  function slotRows(w, now) {
+  // A day's rows: its day and its night, those still to come, with your answer beside each.
+  // The card names the day, so a row says only Day or Night (in full for a screen reader).
+  function slotRows(w, now, list) {
     const s = G.state, n = s.members.length, top = L.best(s, [w], now)[0];
-    return openSlots(w, now).map(i => {
+    return list.map(i => {
       const r = L.roll(s, w, i), mine = L.answer(s, G.me, w, i), open = !!ui.open[w + ':' + i], k = w + ':' + i;
       const all = n > 1 && r.f.length === n;
       const count = all ? `<span class="slot-n all"><span class="live"></span><span>Everyone's free</span></span>`
         : `<span class="slot-n">${pips(r, n, k)}<span><b data-k="n:${k}" data-fx="tick" data-sig="${r.f.length}">${r.f.length}</b> free<span class="vh"> of ${n}${r.m.length ? `, ${r.m.length} maybe` : ''}</span></span></span>`;
       const who = open ? `<div class="who-box" data-k="w:${k}">${roster(k, [['in', 'Free', r.f], ['maybe', 'Maybe', r.m], ['out', 'Busy', r.b], ['none', 'No answer', r['-']]])}<button class="link" data-act="event" data-w="${w}" data-i="${i}">New event on ${L.slotName(i)}</button></div>` : '';
       return `<div class="slot">
-        <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name">${L.slotName(i)}${DOWN}${!all && top && top.i === i ? `<span class="top-slot">Best</span>` : ''}</span>${count}</button>
+        <button class="slot-info" data-act="who" data-w="${w}" data-i="${i}" aria-expanded="${open}"><span class="slot-name"><span class="vh">${L.slotName(i)}</span><span aria-hidden="true">${L.SLOTS[i].part[0].toUpperCase() + L.SLOTS[i].part.slice(1)}</span>${DOWN}${!all && top && top.i === i ? `<span class="top-slot">Best</span>` : ''}</span>${count}</button>
         <div class="slide" data-pos="${pos(ANSWERS, mine.v)}" role="group" aria-label="${L.slotWhen(w, i)}, your answer"><span class="knob"></span>${ANSWERS.map(a => `<button data-act="mark" data-w="${w}" data-i="${i}" data-v="${a[0]}" aria-pressed="${mine.v === a[0]}">${a[1]}</button>`).join('')}</div>
         ${who}
       </div>`;
     }).join('');
   }
-  // The weekend at a glance: a bar a slot, as tall as the share who are free.
-  function sky(w, now) {
-    const s = G.state, n = s.members.length;
-    return n > 1 ? `<span class="sky" aria-hidden="true">${L.SLOTS.map((_, i) => {
-      const past = L.isPast(w, i, now), f = past ? 0 : L.roll(s, w, i).f.length;
-      return `<i class="${past ? 'past' : ''}${i === 1 || i === 3 ? ' gap' : ''}"><b data-k="b:${w}:${i}" data-fx="bar" style="height:${Math.round(f / n * 100)}%"></b></i>`;
-    }).join('')}</span>` : '';
-  }
-  // This weekend is always open: its heading, then its rows on a card.
-  function week(w, now) {
-    const rows = slotRows(w, now);
-    if (!rows) return '';
-    return `<section class="section" data-k="s:${w}">
-      <div class="sec-head"><h2>${L.relLabel(w, now)}</h2><span class="sec-side"><span class="muted">${L.rangeLabel(w)}</span>${sky(w, now)}</span></div>
-      <div class="card">${rows}</div>
-    </section>`;
-  }
   // What a weekend comes to, in a few words.
   const suits = (top, n) => (top ? (top.all ? `${L.slotName(top.i)} suits everyone` : `${L.slotName(top.i)} suits ${top.f} of ${n}`) : 'No time that suits yet');
-  // Every later weekend is a row of one card: its name, its dates under it, its five bars.
-  // A row opens in place to that weekend's nights and days, one weekend at a time; the
-  // rows of a closed one aren't drawn at all, only its bars, which keep up with the answers.
-  function comingUp(list, now) {
-    const s = G.state, n = s.members.length;
-    const mine = !!L.member(s, G.me);
-    const rows = list.filter(w => openSlots(w, now).length).map(w => {
-      const open = ui.week === w;
-      // A dot says you still have a night or day of it to answer.
-      const owed = mine && openSlots(w, now).some(i => L.answer(s, G.me, w, i).v === '-');
-      return `<div class="up">
-        <button class="up-head" data-act="week" data-w="${w}" aria-expanded="${open}" aria-controls="up-${w}">
-          <span class="up-text"><span class="up-name">${L.relLabel(w, now)}</span><span class="vh">, </span><span class="up-when">${L.rangeLabel(w)}</span>${n > 1 ? `<span class="vh">. ${suits(L.best(s, [w], now)[0], n)}</span>` : ''}${owed ? '<span class="vh">. No answer</span>' : ''}</span>
-          ${owed ? '<span class="owed"></span>' : ''}${sky(w, now)}${DOWN}
-        </button>
-        <div class="up-panel" id="up-${w}"${open ? `>${slotRows(w, now)}` : ui.shut === w ? ` inert aria-hidden="true">${slotRows(w, now)}` : ' hidden>'}</div>
-      </div>`;
+  const monthOf = d => d.toLocaleDateString('en-AU', { month: 'long' });
+  // The weekends as a strip of tiles, one open at a time: the month over the dates (the
+  // first day's month, when a weekend runs into the next). A dot says you still have a
+  // night or day of it to answer.
+  function strip(list, at, now) {
+    const s = G.state, mine = !!L.member(s, G.me), first = L.weekKey(now);
+    return `<div class="strip" role="tablist" aria-label="Weekends">${list.map(w => {
+      const a = L.slotDate(w, 0), b = L.slotDate(w, 4), on = w === at;
+      const owed = mine ? openSlots(w, now).filter(i => L.answer(s, G.me, w, i).v === '-').length : 0;
+      const two = a.getMonth() !== b.getMonth();
+      const said = `${L.relLabel(w, now)}, ${a.getDate()}${two ? ' ' + monthOf(a) : ''} to ${b.getDate()} ${monthOf(b)}${owed ? `, ${owed} to answer` : ''}`;
+      return `<button class="tile${w === first ? ' now' : ''}" role="tab" id="tab-${w}" data-act="week" data-w="${w}" aria-selected="${on}" aria-controls="days" tabindex="${on ? 0 : -1}" aria-label="${said}"><span class="tile-m${two ? ' two' : ''}">${L.MONTHS[a.getMonth()]}${two ? '–' + L.MONTHS[b.getMonth()] : ''}</span><span class="tile-d">${a.getDate()}–${b.getDate()}</span>${owed ? '<span class="owed"></span>' : ''}</button>`;
+    }).join('')}</div>`;
+  }
+  // The open weekend: its name and dates, then a card for each day that has a night or day left.
+  function days(w, now) {
+    const left = openSlots(w, now), cards = [0, 1, 2].map(add => {
+      const mine = left.filter(i => L.SLOTS[i].add === add);
+      if (!mine.length) return '';
+      return `<div class="card day"><h3 class="day-name">${L.SLOTS[mine[0]].full} ${L.slotDate(w, mine[0]).getDate()}</h3>${slotRows(w, now, mine)}</div>`;
     }).join('');
-    return rows ? `<section class="section" data-k="s:up">
-      <div class="sec-head"><h2>Coming up</h2></div>
-      <div class="card">${rows}</div>
-    </section>` : '';
+    return `<section class="days" id="days" role="tabpanel" aria-labelledby="tab-${w}" data-k="s:days">
+      <div class="wk-head"><h2>${L.relLabel(w, now)}</h2><span>${L.rangeLabel(w)}</span></div>
+      ${cards}
+    </section>`;
   }
 
   function event(p) {
@@ -1200,7 +1193,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
   }
 
-  let folding = 0; // counts each opening and closing of a later weekend, so a late one can tell it's been overtaken
+  // The strip is moved, if it must be, so a tile is wholly in sight with a little room either side.
+  function inView(tile) {
+    const box = tile.parentNode, b = box.getBoundingClientRect(), t = tile.getBoundingClientRect(), room = 16;
+    if (t.left < b.left + room) box.scrollLeft -= b.left + room - t.left;
+    else if (t.right > b.right - room) box.scrollLeft += t.right - (b.right - room);
+  }
   const acts = {
     // Your answer for a slot. Tapping the one you gave takes it back.
     mark(d) {
@@ -1217,62 +1215,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       ui.open[k] = !ui.open[k]; render();
       const el = app.querySelector(`[data-act="who"][data-w="${d.w}"][data-i="${d.i}"]`); if (el) el.focus({ preventScroll: true });
     },
-    // A later weekend opens in place under its row, one at a time: opening another closes
-    // the first. The row that was tapped stays where it is on the screen.
+    // A tile opens its weekend below the strip, in place of the one that was open. It is
+    // kept only while the group is open, and is no step for Back to undo.
     week(d) {
-      const w = d.w, old = ui.week, head = () => app.querySelector(`.up-head[data-w="${w}"]`);
-      const ease = !calm.matches && !!app.animate, FOLD = { duration: 180, easing: 'ease-out' };
-      const was = head(), y = was ? was.getBoundingClientRect().top : null, turn = ++folding;
-      ui.week = old === w ? null : w;
-      // The one that closes is drawn once more, out of reach, so it can fold away as the other opens.
-      ui.shut = ease && old ? old : null;
-      render();
-      const el = head(); if (!el) return;
-      el.focus({ preventScroll: true });
-      const opening = ui.week ? document.getElementById('up-' + ui.week) : null, going = ui.shut ? document.getElementById('up-' + ui.shut) : null;
-      const h = opening ? opening.offsetHeight : 0, from = y == null ? el.getBoundingClientRect().top : y;
-      // Where the row should sit. A weekend closing above it takes its room with it, so the page
-      // moves by as much and the row doesn't; and if the rows that open would fall below the
-      // screen, the row rises just far enough to show them, staying in sight itself. Both
-      // happen as the fold does, in one movement: part is how far through it is, 0 to 1.
-      const over = from + el.offsetHeight + h + 16 - innerHeight, rise = h && over > 0 && from > 12 ? Math.min(over, from - 12) : 0;
-      const place = part => { const slip = el.getBoundingClientRect().top - (from - rise * part); if (Math.abs(slip) > .5) window.scrollBy(0, slip); };
-      const settle = () => {
-        if (turn !== folding) return;
-        if (ui.shut) {
-          ui.shut = null;
-          // Still the page that was drawn: the closed one is emptied where it stands, and left
-          // as any closed one is. Otherwise the page is drawn again.
-          if (going && document.contains(going) && view === 'board') {
-            going.hidden = true; going.innerHTML = '';
-            going.getAnimations().forEach(a => a.cancel());
-            going.removeAttribute('inert'); going.removeAttribute('aria-hidden'); going.removeAttribute('style');
-            drawn = board();
-          } else render();
-        }
-        // The one that opened is left as plain as if it had been drawn open.
-        if (opening && document.contains(opening)) { opening.getAnimations().forEach(a => a.cancel()); opening.removeAttribute('style'); }
-        if (document.contains(el)) place(1);
-      };
-      if (!ease) return settle();
-      if (going) { going.style.overflow = 'hidden'; going.animate([{ height: going.offsetHeight + 'px', opacity: 1 }, { height: 0, opacity: 0 }], { ...FOLD, fill: 'forwards' }); }
-      if (opening) {
-        opening.style.overflow = 'hidden';
-        opening.animate([{ height: 0, opacity: 0 }, { height: h + 'px', opacity: 1 }], FOLD);
-      }
-      // The arrow turns with it (the row is drawn afresh, so it is turned from where it was).
-      for (const [wk, open] of [[old, false], [ui.week, true]]) {
-        const arrow = wk && app.querySelector(`.up-head[data-w="${wk}"] > svg`);
-        if (arrow) arrow.animate([{ transform: open ? 'rotate(0deg)' : 'rotate(180deg)' }, { transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }], { duration: 150, easing: 'ease' });
-      }
-      const t0 = performance.now(), step = () => {
-        if (turn !== folding || !document.contains(el)) return;
-        const t = Math.min(1, (performance.now() - t0) / FOLD.duration);
-        place(1 - (1 - t) * (1 - t));
-        if (t < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-      setTimeout(settle, FOLD.duration + 20);
+      if (ui.week !== d.w) { ui.week = d.w; render(); }
+      const el = document.getElementById('tab-' + d.w);
+      if (el) { el.focus({ preventScroll: true }); inView(el); }
     },
     // A big group's names, unfolded and folded away again.
     all(d) {
@@ -1281,7 +1229,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     },
     // From the top it starts on this weekend; from a slot, on that slot.
     event(d) {
-      const now = new Date(), w = d.w || L.weeks(now, 2).find(x => openSlots(x, now).length);
+      // (From the top, that is the weekend that's open, when it is one the list of weekends offers.)
+      const now = new Date(), open = !d.w && L.weeks(now, WEEKS).includes(ui.week) && openSlots(ui.week, now).length ? ui.week : '';
+      const w = d.w || open || L.weeks(now, 2).find(x => openSlots(x, now).length);
       openSheet({ kind: 'event', w, sel: [d.i != null ? +d.i : openSlots(w, now)[0]], soft: d.i == null });
     },
     // Tapping a slot adds it to the event or takes it off; one always stays.
@@ -1617,6 +1567,15 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   document.addEventListener('scroll', e => { if (picking && !pickMenu.contains(e.target) && performance.now() - pickedAt > 250) closePick(); }, true);
   window.addEventListener('resize', () => closePick());
   document.addEventListener('keydown', e => {
+    // Arrow keys move along the weekends, opening each as they go.
+    const tab = e.target.closest && e.target.closest('.strip [role="tab"]');
+    if (tab && !e.altKey && !e.ctrlKey && !e.metaKey && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+      const tabs = [...tab.parentNode.children], k = tabs.indexOf(tab);
+      const to = tabs[{ ArrowLeft: Math.max(0, k - 1), ArrowRight: Math.min(tabs.length - 1, k + 1), Home: 0, End: tabs.length - 1 }[e.key]];
+      e.preventDefault();
+      if (to !== tab) acts.week(to.dataset);
+      return;
+    }
     // An open list goes first, then the sheet it is in.
     if (e.key === 'Escape' && picking) { e.preventDefault(); closePick(); }
     else if (e.key === 'Escape' && ui.sheet) closeSheet();

@@ -52,12 +52,6 @@
     if (a.getMonth() === b.getMonth()) return `${a.getDate()}–${b.getDate()} ${MONTHS[a.getMonth()]}`;
     return `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]}`;
   }
-  // The same, in two pieces for the page: { days: '13–15', month: 'Nov' }
-  function rangeParts(week) {
-    const a = parse(week), b = parse(addDays(week, 2));
-    const same = a.getMonth() === b.getMonth();
-    return { days: `${a.getDate()}–${b.getDate()}`, month: same ? MONTHS[a.getMonth()] : `${MONTHS[a.getMonth()]} / ${MONTHS[b.getMonth()]}` };
-  }
   function relLabel(week, now) {
     const n = Math.round((parse(week) - parse(weekKey(now))) / (7 * 864e5));
     return n === 0 ? 'This weekend' : n === 1 ? 'Next weekend' : `In ${n} weeks`;
@@ -198,5 +192,5 @@
     return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
   }
 
-  return { SLOTS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, rangeParts, relLabel, slotName, slotWhen, bits, maskOf, planSlots, planTimes, planIcs, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
+  return { SLOTS, MONTHS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, relLabel, slotName, slotWhen, bits, maskOf, planSlots, planTimes, planIcs, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
 });

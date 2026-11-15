@@ -83,13 +83,6 @@ test('changes apply to the local copy', () => {
   assert.deepEqual(s.plans, []);
 });
 
-test("a weekend's dates in two pieces", () => {
-  assert.deepEqual(L.rangeParts("2026-11-13"), { days: "13–15", month: "Nov" });
-  assert.deepEqual(L.rangeParts("2027-01-29"), { days: "29–31", month: "Jan" });
-  assert.deepEqual(L.rangeParts("2026-10-30"), { days: "30–1", month: "Oct / Nov" });
-  assert.deepEqual(L.rangeParts("2027-12-31"), { days: "31–2", month: "Dec / Jan" });
-});
-
 test('an event over several slots', () => {
   assert.deepEqual(L.bits(6), [1, 2]);
   assert.equal(L.maskOf([1, 2]), 6);
