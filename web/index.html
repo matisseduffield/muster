@@ -59,6 +59,7 @@
   --key: #D6D8DE;
   --key-hi: #E4E5EA;
   --key-down: #C6C8CF;
+  --card-key: #D6D8DE; --card-key-hi: #E4E5EA; --card-key-down: #C6C8CF;
   --pop: #FFFFFF;
   --pop-line: rgba(0, 0, 0, .06);
   --disc: #FFFFFF;
@@ -86,7 +87,7 @@
     --on-ink: #171719;
     --key: #303132;
     --key-hi: #47484A;
-    --key-down: #555658;
+    --key-down: #555658; --card-key: #46474A; --card-key-hi: #58595C; --card-key-down: #666769;
     --pop: #121213;
     --pop-line: rgba(255, 255, 255, .14);
     --disc: #252526;
@@ -113,7 +114,7 @@
   --on-ink: #171719;
   --key: #303132;
   --key-hi: #47484A;
-  --key-down: #555658;
+  --key-down: #555658; --card-key: #46474A; --card-key-hi: #58595C; --card-key-down: #666769;
   --pop: #121213;
   --pop-line: rgba(255, 255, 255, .14);
   --disc: #252526;
@@ -149,18 +150,20 @@ a { color: inherit; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* Top bar: a round Back with the name beside it, then a round button at the right */
-.top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 56px; margin-bottom: -6px; }
+.top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; margin-bottom: -6px; }
 .top-when { font-size: .9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .top-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .top-right { display: flex; align-items: center; gap: 10px; flex: none; }
 .mark { min-width: 0; font-size: 1.35rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
-.top > .mark { padding-left: 6px; }
-a.mark { line-height: 44px; }
+/* Home and the start screens: the app's own mark beside its name */
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 44px; color: inherit; text-decoration: none; }
+.brand svg { flex: none; }
 .icon-btn {
   position: relative; flex: none; display: grid; place-items: center;
   width: 44px; height: 44px; padding: 0;
   background: var(--disc); border: 0; border-radius: 50%; box-shadow: var(--disc-edge); color: var(--ink);
 }
+@media (hover: hover) { .icon-btn:hover { background: var(--key); } }
 .icon-btn:active { background: var(--key-down); }
 /* A group's name has how many are in it on a small line beneath */
 .top-title { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
@@ -170,18 +173,28 @@ a.mark { line-height: 44px; }
 
 /* More: a small panel that drops from under its button, a picture and a word for each thing */
 .scrim { position: fixed; inset: 0; z-index: 4; }
-.menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; min-width: 192px; max-width: 100%; padding: 9px 8px; background: var(--pop); border: 1px solid var(--pop-line); border-radius: 28px; box-shadow: 0 12px 32px rgba(0, 0, 0, .4); transform-origin: top right; }
+.menu { position: absolute; z-index: 5; top: calc(100% + 4px); right: 0; min-width: 192px; max-width: 100%; padding: 9px 8px; background: var(--pop); border: 1px solid var(--pop-line); border-radius: 28px; box-shadow: 0 12px 32px rgba(0, 0, 0, .4); transform-origin: top right; animation: pop .14s ease-out; }
+@keyframes pop { from { opacity: 0; transform: scale(.94); } }
 .menu-row { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 46px; padding: 0 20px 0 16px; background: none; border: 0; border-radius: 18px; font-size: 1.06rem; text-align: left; white-space: nowrap; }
 .menu-row:active { background: var(--key); }
-@media (hover: hover) { .menu-row:hover { background: var(--key); } }
-.menu-row svg { flex: none; width: 22px; height: 22px; }
+@media (hover: hover) { .menu-row:not(:disabled):hover { background: var(--key); } }
+.menu-row:disabled { opacity: .38; cursor: default; }
+.menu-row svg { flex: none; }
 .menu-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* What's chosen has a tick at the right */
+.menu-row .tick { display: none; color: var(--accent); }
+.menu-row[aria-checked="true"] .tick { display: block; }
+/* A list to choose from, in place of the phone's own: the same panel, dropped from
+   under its field (or raised above it), over whatever sheet the field is in. It is
+   placed by the script, never off the screen, and scrolls inside itself when long. */
+.menu.pick-menu { position: fixed; z-index: 30; top: 0; right: auto; left: 0; max-width: calc(100vw - 24px); overflow: hidden auto; overscroll-behavior: contain; scrollbar-width: none; }
+.pick-menu::-webkit-scrollbar { display: none; }
 
 /* Buttons: pills. The one that carries the screen on is blue; the rest are grey keys. */
 .btn {
   appearance: none; display: inline-flex; align-items: center; justify-content: center;
-  min-height: 52px; padding: 0 22px; border: 0; border-radius: 99px;
-  font-size: 1rem; font-weight: 500; text-decoration: none;
+  min-height: 52px; padding: 0 18px; border: 0; border-radius: 99px;
+  font-size: .95rem; font-weight: 500; text-decoration: none;
   background: var(--accent); color: var(--on-ink);
 }
 .btn:active { opacity: .85; }
@@ -199,7 +212,7 @@ a.mark { line-height: 44px; }
 /* Sections and cards */
 .section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-height: 30px; padding: 0 6px; }
-.sec-head h2 { font-size: 1rem; font-weight: 500; }
+.sec-head h2 { font-size: 1rem; font-weight: 400; line-height: 1.4; color: var(--muted); }
 .sec-head .muted { font-size: .9rem; }
 .sec-side { display: flex; align-items: center; gap: 10px; }
 /* A weekend's five slots as bars: the taller, the more of the group is free. */
@@ -209,16 +222,23 @@ a.mark { line-height: 44px; }
 .sky i.past { opacity: .45; }
 .sky b { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 2px; background: var(--pos); transform-origin: bottom; }
 .card { background: var(--surface); border-radius: 24px; }
+/* Grey on a card or a sheet: a button, a pressed card or a raised pill there is a step
+   lighter than on the page, so it still shows against the card in the dark */
+.card, .sheet:not(.page), .wk, .gcard, .pick button, .people, .foot-links, .about-links {
+  --key: var(--card-key); --key-hi: var(--card-key-hi); --key-down: var(--card-key-down);
+}
 .empty { padding: 2px 6px 0; font-size: .92rem; color: var(--muted); }
 .more-weeks { padding: 0 6px; }
 
 /* A few things to pick from, in one pill-shaped track: what's picked is a raised key, the rest lie flat */
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; padding: 3px; background: var(--bg); border-radius: 99px; }
 .seg button {
-  position: relative; appearance: none; min-height: 44px; padding: 0 4px; border: 0; border-radius: 99px;
-  background: none; font-size: .86rem; font-weight: 500; color: var(--muted); white-space: nowrap;
+  position: relative; appearance: none; min-height: 34px; padding: 0 4px; border: 0; border-radius: 99px;
+  background: none; font-size: .92rem; font-weight: 500; color: var(--muted); white-space: nowrap;
 }
-.seg button[aria-pressed="true"] { background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim), var(--lift); color: var(--ink); }
+/* Small on screen, a full-size tap */
+.seg button::before { content: ""; position: absolute; inset: -8px 0; }
+.seg button[aria-pressed="true"] { background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim); color: var(--ink); }
 .seg button:focus-visible { outline-offset: -3px; }
 .seg small { font-size: .8rem; font-weight: 400; margin-left: 5px; }
 
@@ -315,60 +335,61 @@ a.mark { line-height: 44px; }
 /* The parts you can make: a track as wide as the answer above it */
 .ev-part { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .ev-part > span { font-size: .88rem; color: var(--muted); }
-.ev-part .seg button { min-height: 38px; font-size: .86rem; }
-/* Small on screen, a full-size tap */
-.ev-part .seg button::before { content: ""; position: absolute; inset: -4px 0; }
 
 /* Sheets: one rounded panel that rises from the foot, a round button to shut it */
 .backdrop { position: fixed; inset: 0; background: var(--backdrop); z-index: 10; }
 .sheet {
   --field: var(--bg);
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 600px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; margin: 0 auto; max-width: 480px; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
   background: var(--surface); border: 0; border-radius: 28px 28px 0 0; outline: 0;
 }
-.sheet.rise { animation: rise .26s cubic-bezier(.2, .9, .3, 1); }
+.sheet.rise { animation: up .22s ease-out; }
 .backdrop.rise { animation: dim .2s; }
-@keyframes rise { from { transform: translateY(28px); opacity: 0; } }
+@keyframes up { from { transform: translateY(32px); opacity: .4; } }
 @keyframes dim { from { opacity: 0; } }
-.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 62px; padding: 14px 14px 4px 26px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 14px 6px 22px; }
 .sheet-head h2 { min-width: 0; font-size: 1.2rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 10px max(20px, env(safe-area-inset-left, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)); }
-.sheet form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.sheet-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 8px max(22px, env(safe-area-inset-right, 0px)) max(22px, env(safe-area-inset-bottom, 0px)) max(22px, env(safe-area-inset-left, 0px)); }
+.sheet form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .hint { padding: 0 6px; font-size: .9rem; color: var(--muted); }
 
 .field { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
-.field-label { padding: 0 6px; font-size: .9rem; color: var(--muted); }
-/* A field is a rounded well: white on the page, the page's grey on a sheet */
-input[type=text], select {
-  width: 100%; min-height: 52px; padding: 0 16px; background: var(--field, var(--surface)); color: var(--ink);
-  border: 0; border-radius: 18px; font-size: 16px;
+.field-label { padding: 0 6px; font-size: 1rem; color: var(--muted); }
+/* A field is a pill-shaped well: white on the page, the page's grey on a sheet */
+input[type=text], .pick-field {
+  width: 100%; min-height: 52px; padding: 0 20px; background: var(--field, var(--surface)); color: var(--ink);
+  border: 0; border-radius: 99px; font-size: 16px;
 }
-input[type=text]:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
-/* A list to choose from looks like the fields beside it, with its own arrow at the right */
-select { appearance: none; -webkit-appearance: none; padding-right: 44px; text-overflow: ellipsis; }
-.select { position: relative; display: block; }
-.select svg { position: absolute; top: 50%; right: 16px; width: 14px; height: 14px; margin-top: -7px; color: var(--muted); pointer-events: none; }
+input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* A list to choose from looks like the fields beside it, with an arrow at the right: it
+   opens the app's own menu. The <select> behind it is kept, unseen, as what is chosen. */
+.pick-field { appearance: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; }
+.pick-field > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-field svg { flex: none; width: 14px; height: 14px; color: var(--muted); }
+.pick-field:focus-visible { outline-offset: -2px; }
 input::placeholder { color: var(--muted); opacity: 1; }
 .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
-.seg.five { border-radius: 29px; }
-.seg.five button { min-height: 52px; border-radius: 26px; line-height: 1.2; white-space: normal; }
+/* Five to pick from, each a word over a word: taller pills in a rounder track */
+.seg.five { border-radius: 26px; }
+.seg.five button { min-height: 44px; border-radius: 23px; line-height: 1.2; white-space: normal; }
+.seg.five button::before { inset: 0; }
 .seg.five button:disabled { opacity: .35; cursor: default; }
 
 /* A grouped list: one rounded card, a row for each thing, a hairline between rows */
 .people { padding: 0 20px; background: var(--surface); border-radius: 24px; }
-.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; font-size: 1.125rem; line-height: 1.3; }
+.person { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 12px 0; font-size: 1.06rem; line-height: 1.3; }
 .person + .person { border-top: 1px solid var(--line); }
 .person span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .person em { font-style: normal; color: var(--muted); font-size: .9rem; }
 .person .link { flex: none; }
 .foot-links { display: grid; padding: 0 20px; background: var(--surface); border-radius: 24px; }
-.foot-links .link { display: flex; align-items: center; min-height: 56px; padding: 8px 0; font-size: 1.125rem; font-weight: 400; line-height: 1.3; text-align: left; }
+.foot-links .link { display: flex; align-items: center; min-height: 56px; padding: 12px 0; font-size: 1.06rem; font-weight: 400; line-height: 1.3; text-align: left; }
 .foot-links .link + .link { border-top: 1px solid var(--line); }
 .foot-links .link::after { inset: 0 -20px; }
 .foot-links .link.quiet { color: var(--ink); }
 
 /* Home and joining */
-.lead { max-width: 21ch; font-size: 1.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -.015em; overflow-wrap: anywhere; }
+.lead { max-width: 21ch; font-size: 1.75rem; font-weight: 400; line-height: 1.25; letter-spacing: -.015em; overflow-wrap: anywhere; }
 .lead + p { margin-top: 10px; color: var(--muted); max-width: 34ch; }
 form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .names { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -377,7 +398,7 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
    and the small print, sit at the foot. */
 .onb { display: flex; flex-direction: column; gap: 22px; min-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
 .onb .lead { max-width: 20ch; margin: 8px 6px 0; text-wrap: balance; }
-.onb .ask { padding: 0 6px; font-size: 1.75rem; font-weight: 400; line-height: 1.2; letter-spacing: -.015em; }
+.onb .ask { padding: 0 6px; font-size: 1.75rem; font-weight: 400; line-height: 1.25; letter-spacing: -.015em; }
 .onb form.stack { gap: 14px; }
 .onb form.stack input { min-height: 56px; font-size: 18px; }
 .onb .end { margin-top: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
@@ -401,10 +422,15 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .code-in { position: relative; display: block; }
 .code-in input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 18px; }
 .cells { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-.cells i { display: grid; place-items: center; height: 72px; font-style: normal; font-size: 2rem; font-weight: 400; background: var(--field, var(--surface)); border-radius: 20px; }
+.cells i { display: grid; place-items: center; height: 76px; font-style: normal; font-size: 2rem; font-weight: 400; background: var(--field, var(--surface)); border-radius: 22px; }
 .code-in:focus-within .cells i.at { box-shadow: inset 0 0 0 2px var(--accent); }
-.btn:disabled { opacity: .4; }
+/* Not ready yet: an outline with muted text, never a faded slab that reads as live in the dark */
+.btn:disabled { background: none; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--muted); opacity: 1; cursor: default; }
 .invite-foot { display: flex; justify-content: center; }
+/* The other way to invite is a small grey pill, not a word */
+.invite-foot .link { flex: none; min-width: 44px; min-height: 36px; padding: 0 14px; border-radius: 99px; background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim); color: var(--ink); }
+.invite-foot .link::after { inset: -4px 0; }
+.invite-foot .link:active { background: var(--key-down); }
 
 /* A weekend in miniature: a bar a friend for each slot, and the slot that suits everyone. */
 .wk { display: grid; gap: 14px; padding: 18px 12px 18px; background: var(--surface); border-radius: 24px; }
@@ -424,12 +450,12 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .pick { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .pick button { appearance: none; display: grid; justify-items: center; gap: 4px; padding: 30px 18px 28px; text-align: center; color: var(--ink); background: var(--surface); border: 0; border-radius: 24px; }
 .pick button:active { background: var(--key); }
-.pick .ic { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border-radius: 50%; background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim); color: var(--ink); }
+.pick .ic { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 12px; border-radius: 50%; background: linear-gradient(var(--key-hi), var(--key)); box-shadow: var(--rim), var(--lift); color: var(--ink); }
 .pick .ic svg { width: 24px; height: 24px; }
 /* Join shows what a code looks like. */
 .pick .eg { display: flex; align-items: center; gap: 6px; height: 54px; margin-bottom: 12px; }
 .pick .eg i { display: grid; place-items: center; width: 36px; height: 44px; font-style: normal; font-size: 1.1rem; font-weight: 500; color: var(--muted); border-radius: 12px; background: var(--bg); }
-.pick strong { display: block; font-size: 1.25rem; font-weight: 400; line-height: 1.25; letter-spacing: -.01em; }
+.pick strong { display: block; font-size: 1.35rem; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; }
 .pick small { display: block; font-size: .95rem; color: var(--muted); }
 
 /* A group on the home screen: its weekend at a glance. */
@@ -453,26 +479,29 @@ form.stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 /* A page of its own (About, You and the group): it fills the screen and Back leaves it */
 .sheet.page { --field: var(--surface); top: 0; max-width: none; max-height: none; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); border-radius: 0; background: var(--bg); }
 .sheet.page.rise { animation: dim .18s; }
-.sheet.page > * { width: 100%; max-width: 600px; margin-inline: auto; }
-.sheet-head.back { justify-content: flex-start; min-height: 56px; margin-top: 8px; padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px)); }
-.sheet-head.back h2 { font-size: 1.35rem; letter-spacing: -.01em; line-height: 1.3; }
-.sheet.page .sheet-body { flex: 1; display: flex; flex-direction: column; gap: 18px; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+/* Both pages share one shell, measured as the family's About is: its head, its gutters, its gaps */
+.sheet.page > * { width: 100%; max-width: 480px; margin-inline: auto; }
+.sheet-head.back { justify-content: flex-start; padding: 14px max(18px, env(safe-area-inset-right, 0px)) 6px max(18px, env(safe-area-inset-left, 0px)); }
+.sheet-head.back h2 { font-size: 1.35rem; }
+.sheet.page .sheet-body { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 14px max(18px, env(safe-area-inset-right, 0px)) max(22px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); }
 .sheet.page .about-foot { margin-top: auto; }
 /* Room under the last row, so a message at the foot of the screen never sits on it */
 .sheet.page .sheet-body.foot-room { padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
-/* About: who this is, then rounded lists, a row for each thing, with a hairline between them */
-.about-id { display: grid; justify-items: center; gap: 4px; padding: 14px 0 10px; text-align: center; }
-.about-id img { margin-bottom: 10px; border-radius: 15px; }
+/* About. What this is, on a card of its own: the icon, with the name and a line about it beside it.
+   Then rounded lists, a row for each thing, with a hairline between them. */
+.about-id { display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 16px; row-gap: 2px; padding: 18px 20px; background: var(--surface); border-radius: 24px; text-align: left; }
+.about-id img { grid-row: 1 / 3; border-radius: 13px; }
 .about-id p, .about-foot { margin: 0; }
-.about-name { font-size: 1.4rem; font-weight: 500; letter-spacing: -.02em; line-height: 1.2; }
-.about-tag { color: var(--muted); }
+.about-id .about-name { align-self: end; font-size: 1.25rem; font-weight: 500; letter-spacing: -.01em; line-height: 1.25; }
+.about-id .about-tag { align-self: start; font-size: .95rem; line-height: 1.35; color: var(--muted); }
 .about-links { display: grid; padding: 0 20px; background: var(--surface); border-radius: 24px; }
-.about-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; margin: 0; padding: 8px 0; font-size: 1.125rem; line-height: 1.3; color: var(--ink); text-align: left; text-decoration: none; }
+.about-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; margin: 0; padding: 12px 0; font-size: 1.06rem; line-height: 1.3; color: var(--ink); text-align: left; text-decoration: none; }
 .about-row + .about-row { border-top: 1px solid var(--line); }
-.about-row > span { min-width: 0; overflow-wrap: anywhere; }
-.about-row small { display: block; font-size: .9rem; font-variant-numeric: tabular-nums; color: var(--muted); }
+.about-row small { display: block; margin-top: 2px; font-size: .9rem; color: var(--muted); }
+/* A value at the right of its row, as the version's number is */
+.about-row > span + span { flex: none; font-size: 1rem; color: var(--muted); }
 a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-right: 3px; border: solid var(--line-strong); border-width: 1.5px 1.5px 0 0; transform: rotate(45deg); }
-.about-foot { padding-top: 16px; text-align: center; font-size: .8rem; color: var(--muted); }
+.about-foot { text-align: center; font-size: .8rem; line-height: 1.55; color: var(--muted); }
 /* Nothing to show: what went wrong in a line or two, and the way on */
 .lone { display: grid; gap: 10px; justify-items: start; margin-top: 8px; padding: 0 6px; }
 .lone h1 { font-size: 1.5rem; font-weight: 400; line-height: 1.25; letter-spacing: -.01em; }
@@ -481,7 +510,7 @@ a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-ri
 
 #toast {
   position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20;
-  background: var(--ink); color: var(--on-ink); border-radius: 22px; padding: 11px 18px; font-size: .92rem; font-weight: 500; text-align: center;
+  background: var(--ink); color: var(--on-ink); border-radius: 18px; padding: 7px 16px; font-size: .95rem; font-weight: 500; text-align: center;
   opacity: 0; pointer-events: none; transition: opacity .15s; max-width: calc(100vw - 32px);
 }
 #toast.show { opacity: 1; }
@@ -491,6 +520,7 @@ a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-ri
 <body>
 <div id="app"></div>
 <div id="sheet"></div>
+<div class="menu pick-menu" id="pickMenu" role="menu" hidden></div>
 <div id="toast" role="status"></div>
 <script src="lib.js?v=2"></script>
 <script>
@@ -518,12 +548,16 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     del(k) { try { localStorage.removeItem(k); } catch (e) {} },
   };
 
-  const GEAR = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 6h9M16 6h1M3 14h1M8 14h9"/><circle cx="14" cy="6" r="2"/><circle cx="6" cy="14" r="2"/></svg>';
-  const BACK = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12h-17M10.5 5 3.5 12l7 7"/></svg>';
+  // The family's drawings, the same in every app: settings, back, three dots, close, info, share, the tick.
+  const GEAR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.9 19.9 7.45v9.1L12 21.1l-7.9-4.55v-9.1z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const BACK = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12H3M10.5 4.5 3 12l7.5 7.5"/></svg>';
   const DOTS = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="currentColor"><circle cx="10" cy="3.6" r="1.7"/><circle cx="10" cy="10" r="1.7"/><circle cx="10" cy="16.4" r="1.7"/></svg>';
-  const SHUT = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 5l10 10M15 5 5 15"/></svg>';
+  const SHUT = '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14"/></svg>';
   const INFO = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.7" r=".5" fill="currentColor"/></svg>';
-  const ADD = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.7"/><path d="M3.5 19.5c.7-3.3 3.2-5.2 6.5-5.2 1.5 0 2.8.4 3.9 1.1M18.5 13.5v6M15.5 16.5h6"/></svg>';
+  const SHARE = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3.5M7.5 8 12 3.5 16.5 8M5 13v5.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V13"/></svg>';
+  const TICK = '<svg class="tick" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 10.5 4 4 8-9"/></svg>';
+  // Muster's own mark, as on its icon, for the header of the home and start screens.
+  const LOGO = '<svg width="26" height="26" viewBox="0 0 96 96" aria-hidden="true"><rect width="96" height="96" rx="21" fill="#14211C"/><circle cx="26" cy="48" r="10" fill="#F7F8F4"/><circle cx="48" cy="48" r="8.5" fill="none" stroke="#F7F8F4" stroke-width="3"/><path d="M48 38a10 10 0 0 0 0 20z" fill="#F7F8F4"/><rect x="61" y="45.5" width="18" height="5" rx="2.5" fill="#F7F8F4"/></svg>';
   const DOWN = '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5L6 8l3.5-3.5"/></svg>';
   const ANSWERS = [['f', 'Free'], ['m', 'Maybe'], ['b', 'Busy']];
   const REPLIES = [['in', 'Going'], ['maybe', 'Maybe'], ['out', 'No']];
@@ -675,6 +709,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   function go(to) { history.pushState(null, '', to); path = location.pathname; route(); }
   // Back closes an open sheet and stays on the board.
   window.addEventListener('popstate', () => {
+    // An open list goes before anything else: Back puts it away and leaves its sheet open.
+    if (picking && ui.sheet && location.pathname === path) { closePick(); history.pushState({ sheet: 1 }, ''); return; }
+    closePick();
     if (location.pathname === path) {
       if (ui.sheet) { ui.sheet = null; ui.confirm = null; renderSheet(); }
       else if (!G) { ui.bad = false; ui.code = ''; render(); window.scrollTo(0, 0); }
@@ -760,7 +797,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   const chev = () => '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
   const ABOUT = `<button class="icon-btn" data-act="about" aria-label="About">${INFO}</button>`;
-  const bar = () => `<header class="top"><a class="mark" href="/" data-nav>Muster</a>${ABOUT}</header>`;
+  const BRAND = `<a class="brand" href="/" data-nav>${LOGO}<span class="mark">Muster</span></a>`;
+  const bar = () => `<header class="top">${BRAND}${ABOUT}</header>`;
 
   // The terms, privacy and the way to us live in About. The screens that begin
   // something say only that going on agrees to the terms.
@@ -813,7 +851,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       <h1 class="lead">See when everyone's free this weekend.</h1>
       ${weekend()}
       <div class="end"><button class="btn wide" data-act="step" data-s="name">Get started</button>${agree()}</div></div>`,
-    groups: () => `<div class="onb"><header class="top"><a class="mark" href="/" data-nav>Muster</a><div class="top-right"><span class="top-when">${L.rangeLabel(L.weekKey(new Date()))}</span>${ABOUT}</div></header>
+    groups: () => `<div class="onb"><header class="top">${BRAND}<div class="top-right"><span class="top-when">${L.rangeLabel(L.weekKey(new Date()))}</span>${ABOUT}</div></header>
       <h1 class="vh">Your groups</h1>
       <nav class="gcards" aria-label="Your groups">${saved.map(groupCard).join('')}</nav>
       <div class="end groups-acts"><button class="btn" data-act="step" data-s="create">Start a group</button><button class="btn ghost" data-act="step" data-s="link">Join a group</button></div></div>`,
@@ -886,7 +924,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return `
       <header class="top">
         <div class="top-left"><a class="icon-btn" href="/" data-nav aria-label="All your groups">${BACK}</a><div class="top-title"><h1 class="mark">${esc(s.group.name)}</h1><p class="mark-n">${s.members.length} ${s.members.length === 1 ? 'person' : 'people'}</p></div></div>
-        <div class="top-right"><button class="icon-btn" data-act="invite" aria-label="Invite">${ADD}</button><button class="icon-btn" data-act="menu" aria-label="More" aria-haspopup="menu" aria-expanded="${!!ui.menu}">${DOTS}</button></div>
+        <div class="top-right"><button class="icon-btn" data-act="invite" aria-label="Invite">${SHARE}</button><button class="icon-btn" data-act="menu" aria-label="More" aria-haspopup="menu" aria-expanded="${!!ui.menu}">${DOTS}</button></div>
         ${ui.menu ? `<div class="scrim" data-act="menu"></div><div class="menu" role="menu"><button class="menu-row" role="menuitem" data-act="settings">${GEAR}<span>You and the group</span></button><button class="menu-row" role="menuitem" data-act="about">${INFO}<span>About</span></button></div>` : ''}
       </header>
       ${G.offline ? `<p class="status">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
@@ -976,9 +1014,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function renderSheet(quiet) {
     const sh = ui.sheet;
-    if (!sh || view !== 'board' && sh.kind !== 'about') { sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
+    if (!sh || view !== 'board' && sh.kind !== 'about') { closePick(); sheetRoot.innerHTML = ''; sheetDrawn = ''; document.body.style.overflow = ''; return; }
     const html = sh.kind === 'about' ? aboutSheet() : sh.kind === 'event' ? eventSheet(sh) : sh.kind === 'invite' ? inviteSheet(sh) : settingsSheet();
     if (quiet && html === sheetDrawn) return;
+    // A list open over the sheet is put away before the sheet is drawn again.
+    closePick();
     sheetDrawn = html;
     const y = sheetRoot.querySelector('.sheet') ? sheetRoot.querySelector('.sheet').scrollTop : 0;
     // Whatever is half typed survives the redraw, and so does the cursor.
@@ -987,7 +1027,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => { if (el.value !== el.defaultValue) typed[fieldKey(el)] = el.value; });
     const focused = at && at.matches && at.matches('input[type=text]') && sheetRoot.contains(at) ? fieldKey(at) : '';
     const inside = !!at && sheetRoot.contains(at), up = sheetRoot.firstChild ? '' : ' rise';
-    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}${sh.kind === 'about' || sh.kind === 'settings' ? ' page' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
+    sheetRoot.innerHTML = `<div class="backdrop${up}" data-act="close"></div><div class="sheet${up}${sh.kind === 'about' ? ' page about' : sh.kind === 'settings' ? ' page' : ''}" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
     document.body.style.overflow = 'hidden';
     sheetRoot.querySelectorAll('form[data-form] input[type=text]').forEach(el => {
       const k = fieldKey(el);
@@ -1030,11 +1070,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return `${pageHead('About')}
       <div class="sheet-body">
         <div class="about-id">
-          <img src="icons/icon-192.png" width="64" height="64" alt="" onerror="this.hidden=true">
+          <img src="icons/icon-192.png" width="52" height="52" alt="" onerror="this.hidden=true">
           <p class="about-name">Muster</p>
           <p class="about-tag">See when everyone's free this weekend.</p>
         </div>
-        ${v ? `<div class="about-links"><p class="about-row"><span>Version<small>${esc(v)}</small></span></p></div>` : ''}
+        ${v ? `<div class="about-links"><p class="about-row"><span>Version</span><span>${esc(v)}</span></p></div>` : ''}
         <div class="about-links">
           <a class="about-row" href="mailto:support@teloone.au?subject=Muster"><span>Contact support<small>support@teloone.au</small></span></a>
           <a class="about-row" href="https://teloone.au/apps/muster/privacy/" rel="noreferrer">Privacy policy</a>
@@ -1045,12 +1085,14 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       </div>`;
   }
 
+  // A weekend as the list of weekends names it.
+  const weekName = (w, now) => `${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}`;
   function eventSheet(sh) {
     const now = new Date(), open = openSlots(sh.w, now);
     return `${sheetHead('New event', 'Cancel')}
       <div class="sheet-body"><form data-form="event" autocomplete="off">
         <label class="field"><span class="field-label">What's on</span><input type="text" name="text" maxlength="80" placeholder="Pub at 7" required enterkeyhint="done"></label>
-        <label class="field"><span class="field-label">Weekend</span><span class="select"><select name="w">${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${L.relLabel(w, now).replace(' weekend', ' week')}, ${L.rangeLabel(w)}</option>`).join('')}</select>${DOWN}</span></label>
+        <div class="field"><span class="field-label" id="pick-w-label">Weekend</span><button type="button" class="pick-field" data-pick="w" aria-haspopup="menu" aria-expanded="false" aria-controls="pickMenu" aria-labelledby="pick-w-label pick-w-value"><span id="pick-w-value">${weekName(sh.w, now)}</span>${DOWN}</button><select name="w" aria-label="Weekend" hidden>${L.weeks(now, WEEKS).map(w => `<option value="${w}"${w === sh.w ? ' selected' : ''}>${weekName(w, now)}</option>`).join('')}</select></div>
         <div class="field"><span class="field-label">When</span><div class="seg five" role="group" aria-label="When, one or more">${L.SLOTS.map((sl, i) => `<button type="button" data-act="slot" data-i="${i}" aria-pressed="${sh.sel.includes(i)}"${open.includes(i) ? '' : ' disabled'}>${sl.day}<br>${sl.part}</button>`).join('')}</div></div>
         <button class="btn wide">Post</button>
       </form></div>`;
@@ -1189,7 +1231,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     menu() {
       ui.menu = !ui.menu; render();
       const m = app.querySelector('.menu');
-      if (m && m.animate && !calm.matches) m.animate([{ opacity: 0, transform: 'scale(.94)' }, { opacity: 1, transform: 'none' }], { duration: 140, easing: 'ease-out' });
       const el = app.querySelector(m ? '.menu-row' : '.icon-btn[data-act="menu"]'); if (el) el.focus({ preventScroll: true });
     },
     settings() { openSheet({ kind: 'settings' }); },
@@ -1343,6 +1384,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     if (Date.now() - dragged < 350 && e.target.closest('.slide')) return;
     const nav = e.target.closest('a[data-nav]');
     if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); return go(nav.getAttribute('href')); }
+    // A field that chooses from a list opens the list, or puts it away.
+    const pick = e.target.closest('[data-pick]');
+    if (pick) return picking === pick ? closePick() : openPick(pick);
     const el = e.target.closest('[data-act]');
     if (!el || el.disabled) return;
     const act = acts[el.dataset.act];
@@ -1378,10 +1422,90 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     ui.sheet.sel = ui.sheet.sel.filter(i => open.includes(i));
     if (!ui.sheet.sel.length) ui.sheet.sel = [open[0]];
     renderSheet();
-    const el = sheetRoot.querySelector('select[name=w]'); if (el) el.focus({ preventScroll: true });
+    const el = sheetRoot.querySelector('[data-pick="w"]'); if (el) el.focus({ preventScroll: true });
+  });
+
+  // ---- Lists to choose from ----
+  // The phone's own list picker is never shown. A field that chooses from a list is a
+  // button beside its hidden <select>, which stays what is chosen: the menu is made from
+  // the select's options each time it opens, and choosing a row sets the select and
+  // fires the change the rest of the page listens for.
+  const pickMenu = document.getElementById('pickMenu');
+  let picking = null, pickedAt = 0;
+  const pickSelect = t => t.parentNode.querySelector(`select[name="${t.dataset.pick}"]`);
+  function openPick(trigger) {
+    closePick();
+    const select = pickSelect(trigger); if (!select) return;
+    pickMenu.innerHTML = [...select.options].map(o => `<button type="button" class="menu-row" role="menuitemradio" aria-checked="${o.value === select.value}" data-value="${esc(o.value)}"${o.disabled ? ' disabled' : ''}><span>${esc(o.textContent)}</span>${TICK}</button>`).join('');
+    pickMenu.setAttribute('aria-label', select.getAttribute('aria-label') || '');
+    // Under its field, from the field's left edge and at least as wide; above it when
+    // it doesn't fit below and there's more room above. Never within 12px of the
+    // screen's edge, and no taller than the room it has: the rest scrolls.
+    pickMenu.style.cssText = '';
+    pickMenu.hidden = false;
+    const t = trigger.getBoundingClientRect(), W = document.documentElement.clientWidth, H = innerHeight;
+    pickMenu.style.minWidth = Math.min(t.width, W - 24) + 'px';
+    const w = pickMenu.offsetWidth, h = pickMenu.offsetHeight;
+    const atRight = (t.left + t.right) / 2 > W / 2 + 1;
+    const below = H - 12 - (t.bottom + 4), above = t.top - 4 - 12;
+    const up = h > below && above > below;
+    pickMenu.style.left = Math.max(12, Math.min(W - 12 - w, atRight ? t.right - w : t.left)) + 'px';
+    pickMenu.style.top = (up ? Math.max(12, t.top - 4 - h) : t.bottom + 4) + 'px';
+    pickMenu.style.maxHeight = (up ? above : below) + 'px';
+    pickMenu.style.transformOrigin = `${up ? 'bottom' : 'top'} ${atRight ? 'right' : 'left'}`;
+    picking = trigger; pickedAt = performance.now();
+    trigger.setAttribute('aria-expanded', 'true');
+    const at = pickMenu.querySelector('[aria-checked="true"]') || pickMenu.querySelector('.menu-row:not(:disabled)');
+    if (at) { at.focus({ preventScroll: true }); at.scrollIntoView({ block: 'nearest' }); }
+  }
+  // Focus goes back to the field, so the keyboard carries on from where it was.
+  function closePick() {
+    if (!picking) return;
+    const trigger = picking;
+    picking = null;
+    pickMenu.hidden = true;
+    if (document.contains(trigger)) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus({ preventScroll: true }); }
+  }
+  pickMenu.addEventListener('click', e => {
+    const row = e.target.closest('.menu-row');
+    if (!row || row.disabled || !picking) return;
+    const select = pickSelect(picking), value = row.dataset.value;
+    closePick();
+    // As with the phone's own picker, choosing what's already chosen changes nothing.
+    if (!select || value === select.value) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  pickMenu.addEventListener('keydown', e => {
+    const rows = [...pickMenu.querySelectorAll('.menu-row:not(:disabled)')], at = rows.indexOf(document.activeElement);
+    const to = { ArrowDown: (at + 1) % rows.length, ArrowUp: (at - 1 + rows.length) % rows.length, Home: 0, End: rows.length - 1 }[e.key];
+    if (to != null && rows.length) { e.preventDefault(); rows[to].focus(); }
+    else if (e.key === 'Tab') closePick();
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && ui.sheet) closeSheet();
+    const t = e.target.closest && e.target.closest('[data-pick]');
+    if (t && e.key === 'ArrowDown' && picking !== t) { e.preventDefault(); openPick(t); }
+  });
+  // A tap anywhere else, the page or its sheet scrolling, or the screen changing shape puts
+  // it away. Like the phone's own picker, that tap does nothing else.
+  let swallow = false;
+  document.addEventListener('pointerdown', e => {
+    swallow = false;
+    if (!picking || e.target.closest('#pickMenu') || e.target.closest('[data-pick]') === picking) return;
+    closePick();
+    if (e.target.closest('[data-pick]')) return;
+    swallow = true;
+    e.stopPropagation();
+  }, true);
+  for (const type of ['pointerup', 'pointercancel']) document.addEventListener(type, () => setTimeout(() => { swallow = false; }), true);
+  document.addEventListener('click', e => { if (swallow) { swallow = false; e.stopPropagation(); e.preventDefault(); } }, true);
+  // (Not the tail of a scroll that was still settling as the menu opened.)
+  document.addEventListener('scroll', e => { if (picking && !pickMenu.contains(e.target) && performance.now() - pickedAt > 250) closePick(); }, true);
+  window.addEventListener('resize', () => closePick());
+  document.addEventListener('keydown', e => {
+    // An open list goes first, then the sheet it is in.
+    if (e.key === 'Escape' && picking) { e.preventDefault(); closePick(); }
+    else if (e.key === 'Escape' && ui.sheet) closeSheet();
     else if (e.key === 'Escape' && ui.menu) acts.menu();
     // On a phone the keyboard's done key puts the keyboard away. Only Post posts,
     // once the day has been looked at.
