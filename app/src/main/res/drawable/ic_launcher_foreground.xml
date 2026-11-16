@@ -11,16 +11,16 @@
         android:translateY="14.64">
         <path
             android:pathData="M16,48a10,10 0 1,0 20,0a10,10 0 1,0 -20,0z"
-            android:fillColor="#F7F8F4" />
+            android:fillColor="#FFFFFF" />
         <path
             android:pathData="M39.5,48a8.5,8.5 0 1,0 17,0a8.5,8.5 0 1,0 -17,0z"
-            android:strokeColor="#F7F8F4"
+            android:strokeColor="#FFFFFF"
             android:strokeWidth="3" />
         <path
             android:pathData="M48,38a10,10 0 0,0 0,20z"
-            android:fillColor="#F7F8F4" />
+            android:fillColor="#FFFFFF" />
         <path
             android:pathData="M63.5,45.5h13a2.5,2.5 0 0,1 0,5h-13a2.5,2.5 0 0,1 0,-5z"
-            android:fillColor="#F7F8F4" />
+            android:fillColor="#FFFFFF" />
     </group>
 </vector>
