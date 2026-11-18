@@ -236,7 +236,7 @@ final class Shell: UIViewController, WKNavigationDelegate, WKScriptMessageHandle
     func keepStorage() {
         guard isViewLoaded, web.url?.scheme == Shell.scheme else { return }
         web.evaluateJavaScript("JSON.stringify(localStorage)") { value, _ in
-            guard let text = value as? String, text.hasPrefix("{"), let data = text.data(using: .utf8) else { return }
+            guard let text = value as? String, text.hasPrefix("{"), text.count > 2, let data = text.data(using: .utf8) else { return }
             try? data.write(to: Shell.storageFile, options: .atomic)
         }
     }
