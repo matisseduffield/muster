@@ -1,13 +1,19 @@
-// Muster's rules, apart from the page so they can be tested: which weekend is
-// which, what someone's answer is, who's free when, and what a change does.
+// Muster's rules, apart from the page: which weekend is which, what someone's
+// answer is, who's free when, and what a change does.
+/* ios:cut */
+// (Apart so they can be tested: the same file runs in the page and under `node --test`.)
+/* ios:end */
 //
 // A week is the date of its Friday ('2026-11-13'). Each weekend has five
 // slots: 0 Fri night, 1 Sat day, 2 Sat night, 3 Sun day, 4 Sun night. An
 // answer is one character: f free, m maybe, b busy, - none.
 (function (root, factory) {
+  /* ios:cut */
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.Muster = factory();
-})(typeof self !== 'undefined' ? self : this, function () {
+  else
+  /* ios:end */
+  root.Muster = factory();
+})(/* ios:cut */typeof self !== 'undefined' ? self : /* ios:end */this, function () {
   const SLOTS = [
     { day: 'Fri', full: 'Friday', part: 'night', add: 0 },
     { day: 'Sat', full: 'Saturday', part: 'day', add: 1 },
@@ -89,7 +95,9 @@
     end.setHours(SLOTS[last].part === 'night' ? 23 : 17, 0, 0, 0);
     return { start, end };
   }
-  // The same plan as a calendar file, in the phone's own time zone.
+  /* ios:cut */
+  // The same plan as a calendar file, in the phone's own time zone. (For the
+  // website, which has no calendar sheet to open.)
   function planIcs(p, notes, now) {
     const t = planTimes(p), two = n => String(n).padStart(2, '0');
     const local = d => `${d.getFullYear()}${two(d.getMonth() + 1)}${two(d.getDate())}T${two(d.getHours())}${two(d.getMinutes())}00`;
@@ -98,6 +106,7 @@
     return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Muster//EN', 'BEGIN:VEVENT', `UID:${p.id}@muster.teloone.au`, `DTSTAMP:${stamp}`,
       `DTSTART:${local(t.start)}`, `DTEND:${local(t.end)}`, `SUMMARY:${text(p.text)}`, `DESCRIPTION:${text(notes)}`, 'END:VEVENT', 'END:VCALENDAR', ''].join('\r\n');
   }
+  /* ios:end */
 
   function planPart(p, m) {
     const all = planSlots(p), mine = bits((p.part && p.part[m]) || 0).filter(i => all.includes(i));
@@ -116,11 +125,14 @@
     return u && u !== '-' ? { v: u, usual: true } : { v: '-', usual: false };
   }
 
+  /* ios:cut */
+  // (Tested here, but no page calls it now: answers are set with the slider.)
   // The tap after this one. With a usual set there's no going back to nothing.
   function next(v, hasUsual) {
     const ring = hasUsual ? 'fmb' : 'fmb-';
     return ring[(ring.indexOf(v) + 1) % ring.length];
   }
+  /* ios:end */
 
   // Everyone in a slot, sorted into f, m, b and - (in the group's order).
   function roll(state, week, i) {
@@ -129,12 +141,15 @@
     return out;
   }
 
+  /* ios:cut */
+  // (Tested here, but no page calls it now.)
   // People with nothing said for any of the weekend's slots still to come.
   function waiting(state, week, now) {
     const left = SLOTS.map((_, i) => i).filter(i => !isPast(week, i, now));
     if (!left.length) return [];
     return state.members.filter(m => left.every(i => answer(state, m.id, week, i).v === '-'));
   }
+  /* ios:end */
 
   // The slots most of the group can make, best first: by share of the group
   // free (a maybe counts half), then by who's free, then the soonest.
@@ -185,12 +200,15 @@
     return state;
   }
 
+  /* ios:cut */
+  // (Tested here, but no page calls it now.)
   // "Sam", "Sam and Jo", "Sam, Jo and Alex", "Sam, Jo and 3 more"
   function names(list, max = 3) {
     const n = list.map(m => m.name);
     if (n.length > max) return `${n.slice(0, max - 1).join(', ')} and ${n.length - max + 1} more`;
     return n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
   }
+  /* ios:end */
 
-  return { SLOTS, MONTHS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, relLabel, slotName, slotWhen, bits, maskOf, planSlots, planTimes, planIcs, slotsName, planWhen, planPart, member, answer, next, roll, waiting, best, applyOp, names };
+  return { SLOTS, MONTHS, BLANK, key, parse, addDays, weekKey, weeks, slotEnd, isPast, slotDate, rangeLabel, relLabel, slotName, slotWhen, bits, maskOf, planSlots, planTimes, /* ios:cut */planIcs, /* ios:end */slotsName, planWhen, planPart, member, answer, /* ios:cut */next, /* ios:end */roll, /* ios:cut */waiting, /* ios:end */best, applyOp/* ios:cut */, names/* ios:end */ };
 });

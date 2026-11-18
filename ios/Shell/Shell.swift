@@ -1,9 +1,16 @@
+// Muster's shell: the whole of the iPhone app that isn't the page, apart from
+// App.swift (links, the calendar sheet, time to finish sending).
+//
+// It began as the file my apps share (APPS/app-store/shell/Shell.swift) and has
+// been cut down to what Muster does. It shows the bundled page in a web view,
+// opens the share sheet, gives a tick on taps, shows the Thursday reminder,
+// opens links in Safari or Mail, opens a group from a link or a reminder, and
+// keeps a copy of what the page has saved. A page can ask it for nothing else.
 import UIKit
 import WebKit
 import UserNotifications
-import UniformTypeIdentifiers
 
-/// What differs between the apps. Each app's App.swift fills one in.
+/// Where the bundled page lives and what it calls the app. App.swift fills one in.
 struct ShellConfig {
     /// The object pages talk to: `window.<bridge>.postMessage(json)`.
     let bridge: String
@@ -17,28 +24,18 @@ struct ShellConfig {
     var isAppPath: (String) -> Bool = { _ in false }
 }
 
-/// Shows the app's own bundled pages in a web view and gives them a few things
-/// a page can't do alone: the share sheet, haptics, notifications.
-final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+/// Shows the app's own bundled page in a web view and gives it the few things
+/// a page can't do alone: the share sheet, haptics, the Thursday reminder.
+final class Shell: UIViewController, WKNavigationDelegate, WKScriptMessageHandler {
     static let scheme = "app"
     static private(set) weak var current: Shell?
 
     let config: ShellConfig
     private(set) var web: WKWebView!
-    /// Messages only this app knows. Return true when one is dealt with.
+    /// The messages App.swift answers. Returns true when one is dealt with.
     var onMessage: (String, [String: Any]) -> Bool = { _, _ in false }
-    /// More to tell a page when it says hello.
-    var info: () -> [String: Any] = { [:] }
-    /// A page has said hello and can take messages.
-    var onReady: () -> Void = {}
     /// The app is in front again.
     var onActive: () -> Void = {}
-    /// iOS ended the page's process and the page is starting again: it can't take messages until it says hello.
-    var onRestart: () -> Void = {}
-    /// Scripts to run before each page's own.
-    var scripts: [String] = []
-    /// Answers a page needs before it can carry on: `prompt('shell:<what>')`.
-    var answer: (String) -> String? = { _ in nil }
 
     private var first: String?
     private let tick = UISelectionFeedbackGenerator()
@@ -67,8 +64,6 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
 
         let setup = WKWebViewConfiguration()
         setup.setURLSchemeHandler(Pages(config: config), forURLScheme: Shell.scheme)
-        setup.allowsInlineMediaPlayback = true
-        setup.mediaTypesRequiringUserActionForPlayback = []
         setup.dataDetectorTypes = []
         let content = setup.userContentController
         content.add(self, name: "shell")
@@ -78,14 +73,13 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
           window.\(config.bridge) = { postMessage: s => out.postMessage(String(s)), onmessage: null };
         })();
         """
-        for source in [Shell.restoreScript(), bridge, Shell.feel] + scripts where !source.isEmpty {
+        for source in [Shell.restoreScript(), bridge, Shell.feel] where !source.isEmpty {
             content.addUserScript(WKUserScript(source: source, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
 
         web = WKWebView(frame: view.bounds, configuration: setup)
         web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         web.navigationDelegate = self
-        web.uiDelegate = self
         web.isOpaque = false
         web.backgroundColor = config.background
         web.scrollView.backgroundColor = config.background
@@ -155,18 +149,14 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
         if onMessage(type, msg) { return }
         switch type {
         case "hello":
+            // The page shows the version on its About page, and offers the
+            // reminder according to whether notifications are allowed.
             Notices.allowed { [weak self] allowed in
-                guard let self else { return }
-                var reply: [String: Any] = [
+                self?.send([
                     "type": "info",
                     "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
-                    "updates": false,
-                    "platform": "ios",
                     "notifications": allowed,
-                ]
-                reply.merge(self.info()) { _, new in new }
-                self.send(reply)
-                self.onReady()
+                ])
             }
         case "share":
             let sheet = UIActivityViewController(activityItems: [msg["text"] as? String ?? ""], applicationActivities: nil)
@@ -191,7 +181,7 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url else { return decisionHandler(.cancel) }
-        if url.scheme == Shell.scheme || url.scheme == "about" || url.scheme == "blob" { return decisionHandler(.allow) }
+        if url.scheme == Shell.scheme || url.scheme == "about" { return decisionHandler(.allow) }
         if let frame = navigationAction.targetFrame, !frame.isMainFrame { return decisionHandler(.allow) }
         leave(to: url)
         decisionHandler(.cancel)
@@ -211,49 +201,20 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
         }
     }
 
-    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = navigationAction.request.url {
-            if url.scheme == Shell.scheme { webView.load(navigationAction.request) } else { leave(to: url) }
-        }
-        return nil
-    }
-
     /// iOS ended the page's process to free memory: start the page again.
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        onRestart()
         if webView.url == nil { webView.load(URLRequest(url: url(config.start))) } else { webView.reload() }
-    }
-
-    // MARK: Page dialogs
-
-    func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-        // WebKit must get its answer even when nothing can be shown.
-        guard viewIfLoaded?.window != nil, presentedViewController == nil else { return completionHandler() }
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
-        present(alert, animated: true)
-    }
-
-    func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
-        guard viewIfLoaded?.window != nil, presentedViewController == nil else { return completionHandler(false) }
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(false) })
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler(true) })
-        present(alert, animated: true)
-    }
-
-    // The pages never ask for typed text this way, so prompt() is how one gets
-    // an answer from the app without waiting for a message back.
-    func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
-        guard frame.isMainFrame, webView.url?.scheme == Shell.scheme, prompt.hasPrefix("shell:") else { return completionHandler(nil) }
-        completionHandler(answer(String(prompt.dropFirst(6))))
     }
 
     // MARK: Keeping what the pages store
 
-    // Pages keep their data in web storage, which iOS may clear when the phone
-    // runs short of space. A copy goes in the app's own files, which are in the
-    // phone's backup, and is put back if the storage is ever found empty.
+    // The page keeps its groups, your name and changes not yet sent in web
+    // storage, which iOS may clear when the phone runs short of space. Each time
+    // the app leaves the front, a copy of that storage goes in one file in the
+    // app's own folder (Application Support/storage.json, which is in the phone's
+    // backup). At launch, if the page's storage is found empty, the copy is put
+    // back before the page runs. It is data only: the saved text is parsed as
+    // JSON and set as storage values, never run. Nothing is sent anywhere.
     private static var storageFile: URL {
         let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -261,8 +222,15 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
     }
 
     private static func restoreScript() -> String {
-        guard let saved = try? String(contentsOf: storageFile, encoding: .utf8), saved.hasPrefix("{"), saved.count > 2 else { return "" }
-        return "(() => { try { if (!localStorage.length) { const s = \(saved); for (const k in s) localStorage.setItem(k, s[k]); } } catch (e) {} })();"
+        // Read as JSON, written out again, and handed to the page as one quoted
+        // string for JSON.parse: whatever the file holds, it can only become values.
+        guard let data = try? Data(contentsOf: storageFile),
+              let saved = (try? JSONSerialization.jsonObject(with: data)) as? [String: String], !saved.isEmpty,
+              let clean = try? JSONSerialization.data(withJSONObject: saved),
+              let text = String(data: clean, encoding: .utf8),
+              let quoted = try? JSONSerialization.data(withJSONObject: text, options: .fragmentsAllowed),
+              let literal = String(data: quoted, encoding: .utf8) else { return "" }
+        return "(() => { try { if (!localStorage.length) { const s = JSON.parse(\(literal)); for (const k in s) localStorage.setItem(k, s[k]); } } catch (e) {} })();"
     }
 
     func keepStorage() {
@@ -278,11 +246,10 @@ final class Shell: UIViewController, WKNavigationDelegate, WKUIDelegate, WKScrip
 final class Pages: NSObject, WKURLSchemeHandler {
     private let config: ShellConfig
     private let folder: URL
+    // The kinds of file in the folder.
     private static let types = [
-        "html": "text/html; charset=utf-8", "js": "text/javascript; charset=utf-8", "mjs": "text/javascript; charset=utf-8",
-        "css": "text/css; charset=utf-8", "json": "application/json", "webmanifest": "application/manifest+json",
-        "svg": "image/svg+xml", "png": "image/png", "jpg": "image/jpeg", "webp": "image/webp", "ico": "image/x-icon",
-        "woff2": "font/woff2", "woff": "font/woff", "txt": "text/plain; charset=utf-8", "wasm": "application/wasm",
+        "html": "text/html; charset=utf-8", "js": "text/javascript; charset=utf-8",
+        "png": "image/png", "woff2": "font/woff2", "txt": "text/plain; charset=utf-8",
     ]
 
     init(config: ShellConfig) {
@@ -294,8 +261,7 @@ final class Pages: NSObject, WKURLSchemeHandler {
         guard let url = task.request.url, let file = file(for: url.path), let data = try? Data(contentsOf: file) else {
             return task.didFailWithError(URLError(.fileDoesNotExist))
         }
-        let ext = file.pathExtension.lowercased()
-        let type = Pages.types[ext] ?? UTType(filenameExtension: ext)?.preferredMIMEType ?? "application/octet-stream"
+        let type = Pages.types[file.pathExtension.lowercased()] ?? "application/octet-stream"
         let headers = ["Content-Type": type, "Content-Length": String(data.count), "Cache-Control": "no-cache"]
         guard let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: headers) else {
             return task.didFailWithError(URLError(.badServerResponse))

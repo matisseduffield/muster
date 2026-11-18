@@ -1,6 +1,12 @@
 import UIKit
 
-/// Muster on iPhone: the same pages as the website, kept in the app.
+/// Muster on iPhone: the page, kept in the app.
+///
+/// The page is the folder `web` in the app, which is `ios/bundle/web`: the
+/// shared page without the parts only the website uses (see
+/// scripts/ios-bundle.mjs). What it can ask of the app is here and in
+/// Shell.swift: the share sheet, a tick on taps, the calendar sheet, the
+/// Thursday reminder, and a little longer to finish sending. Nothing else.
 @MainActor
 enum App {
     static let config = ShellConfig(

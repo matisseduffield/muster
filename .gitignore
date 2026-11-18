@@ -6,5 +6,7 @@ local.properties
 .idea/
 *.iml
 .kotlin/
+# The iPhone app's copy of web/, made by scripts/ios-bundle.mjs
+ios/bundle/
 *.keystore
 keystore.properties

@@ -28,6 +28,32 @@ Who's free this weekend. A friend group marks Friday night, Saturday and Sunday
   fetching it from the public `muster-releases` repo under `web/`.
 - `dev.mjs`: a local server with a demo group (`node dev.mjs 5186`).
 
+## The iPhone app
+
+`ios/` is a small Swift shell (XcodeGen, built by `.github/workflows/ios.yml` and `ios-release.yml`)
+that shows the page from inside the app. It does not bundle `web/` as it is: `scripts/ios-bundle.mjs`
+makes `ios/bundle/web` (not in git), a copy without what the iPhone app doesn't have, and the app
+bundles that. Left out are the website's files (`sw.js`, `manifest.json`, the tab and home-screen
+icons) and every part of `index.html` and `lib.js` between these marks:
+
+```
+/* ios:cut */ ... /* ios:end */          in scripts and styles
+<!-- ios:cut --> ... <!-- ios:end -->    in markup
+```
+
+The marks are comments, so the website and the Android app are not changed by them. Marked today:
+the website's head tags and service worker, its version stamp, the link to the Android app, its own
+ways to share a link, save a calendar file and buzz, every test for whether an app is there, the
+`data-theme` overrides, and the rules in `lib.js` that no page calls. The script stops the build on a
+mark without its partner, on a file in `web/` it hasn't been told about, on a message to the app
+that isn't on its list, and if any word on its `FORBIDDEN` list is still in the copy. **Anything new
+that only the website or the Android app uses goes between marks**, and its names on that list.
+
+```
+node scripts/ios-bundle.mjs               # make ios/bundle/web and check it (run before xcodegen)
+node scripts/ios-bundle.mjs --check DIR   # check a folder, such as the one inside a built app
+```
+
 ## The server
 
 `GET /api/g/<id>` returns a group, with an ETag of its version (304 when unchanged).

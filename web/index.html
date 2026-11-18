@@ -7,6 +7,7 @@
 <base href="/">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="referrer" content="no-referrer">
+<!-- ios:cut -->
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#F0F1F3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#171719" media="(prefers-color-scheme: dark)">
@@ -21,6 +22,7 @@
 <meta property="og:title" content="Muster">
 <meta property="og:description" content="Mark when you are free this weekend, and see when everyone else is.">
 <meta property="og:site_name" content="Muster">
+<!-- ios:end -->
 <title>Muster</title>
 <style>
 /* Hanken Grotesk ships with the page (fonts/, SIL OFL). */
@@ -72,7 +74,7 @@
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root/* ios:cut */:not([data-theme="light"])/* ios:end */ {
     --bg: #171719;
     --surface: #2F2F2F;
     --ink: #EAEAEA;
@@ -99,6 +101,7 @@
     color-scheme: dark;
   }
 }
+/* ios:cut */
 :root[data-theme="dark"] {
   --bg: #171719;
   --surface: #2F2F2F;
@@ -125,6 +128,7 @@
   --backdrop: rgba(0, 0, 0, .6);
   color-scheme: dark;
 }
+/* ios:end */
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -540,20 +544,26 @@ a.about-row::after { content: ""; flex: none; width: 9px; height: 9px; margin-ri
 <div class="menu pick-menu" id="pickMenu" role="menu" hidden></div>
 <div id="toast" role="status"></div>
 <script src="lib.js?v=3"></script>
+<!-- ios:cut -->
 <script>
 if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
+<!-- ios:end -->
 <script>
 (() => {
   const L = Muster;
   const app = document.getElementById('app'), sheetRoot = document.getElementById('sheet'), toastEl = document.getElementById('toast');
   const WEEKS = 8;
 
-  // Inside the iPhone app the pages come with the app, and the app lends what a
-  // page can't do alone: the share sheet, a tick under the thumb, reminders.
-  const shell = window.musterApp || null;
-  const SITE = shell ? 'https://muster.teloone.au' : location.origin;
-  const API = shell ? SITE : '';
+  // The app lends what a page can't do alone: the share sheet, a tick under the
+  // thumb, the calendar, reminders. The server is asked by its full address.
+  /* ios:cut */
+  // (That is inside the apps, where the pages come with the app. On the website
+  // there is no app to ask, and the server is wherever the page came from.)
+  /* ios:end */
+  const shell = window.musterApp/* ios:cut */ || null/* ios:end */;
+  const SITE = /* ios:cut */!shell ? location.origin : /* ios:end */'https://muster.teloone.au';
+  const API = /* ios:cut */!shell ? '' : /* ios:end */SITE;
   const tell = m => shell.postMessage(JSON.stringify(m));
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -597,14 +607,16 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function forget(id) { saved = saved.filter(s => s.id !== id); ls.set('muster.groups', saved); ls.del('muster.g.' + id); plan(); }
 
-  // The Thursday reminder, in the iPhone app. The phone shows it by itself: one
+  // The Thursday reminder. The phone shows it by itself: one
   // for each weekend ahead you haven't fully answered, at 6 the evening before.
   const remindOn = () => !!ls.get('muster.remind', false);
   // Notifications were refused: only the phone's Settings can turn them back on.
   let remindBlocked = false;
   let planned = '';
   function plan() {
+    /* ios:cut */
     if (!shell) return;
+    /* ios:end */
     const items = [], now = Date.now();
     if (remindOn()) {
       const mine = saved.map(g => ({ g, c: ls.get('muster.g.' + g.id, null) })).filter(x => x.g.me && x.c && x.c.state);
@@ -623,10 +635,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   // Changes go a slice at a time, so a long list made offline never asks too much of one request.
   const SLICE = 40;
-  // The iPhone app gives the page a little longer to send when it goes out of sight.
+  // The app gives the page a little longer to send when it goes out of sight.
   let owing = null;
   function owe() {
+    /* ios:cut */
     if (!shell) return;
+    /* ios:end */
     const on = !!(G && G.id && G.queue.length && !G.gone && !G.left);
     if (on !== owing) { owing = on; tell({ type: 'unsent', on }); }
   }
@@ -756,7 +770,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
 
   function render() {
     view = kind();
+    /* ios:cut */
     document.title = G && G.state ? `${G.state.group.name} · Muster` : 'Muster';
+    /* ios:end */
     if (view !== 'board' && ui.sheet && ui.sheet.kind !== 'about') { ui.sheet = null; renderSheet(); }
     const html = ({ home, gone, failed, loading, join, board })[view]();
     // Nothing new: leave the page alone, so focus and half-typed names survive.
@@ -1116,12 +1132,15 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   }
 
   // One place for the version, the policy, the terms and the way to us.
+  // The app says which build it is.
   let appVersion = '';
+  /* ios:cut */
   const getApp = !shell && location.hostname === 'muster.teloone.au' && /Android/.test(navigator.userAgent);
-  // The app says which build it is. The website's copy is stamped with its version when it is published.
+  // The website's copy is stamped with its version when it is published.
   const WEB_VERSION = '__VERSION__';
+  /* ios:end */
   function aboutSheet() {
-    const v = appVersion || (WEB_VERSION.startsWith('__') ? '' : WEB_VERSION);
+    const v = appVersion/* ios:cut */ || (WEB_VERSION.startsWith('__') ? '' : WEB_VERSION)/* ios:end */;
     return `${pageHead('About')}
       <div class="sheet-body">
         <div class="about-id">
@@ -1134,7 +1153,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
           <a class="about-row" href="mailto:support@teloone.au?subject=Muster"><span>Contact support<small>support@teloone.au</small></span></a>
           <a class="about-row" href="https://teloone.au/apps/muster/privacy/" rel="noreferrer">Privacy policy</a>
           <a class="about-row" href="https://teloone.au/apps/muster/terms/" rel="noreferrer">Terms of use</a>
-          ${getApp ? `<a class="about-row" href="/app">Get the Android app</a>` : ''}
+          ${/* ios:cut */getApp ? `<a class="about-row" href="/app">Get the Android app</a>` : /* ios:end */''}
         </div>
         <p class="about-foot">Made in Adelaide by Telo One</p>
       </div>`;
@@ -1164,8 +1183,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         <form data-form="rename-me" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-me">Your name</label><div class="pair"><input id="f-me" type="text" name="name" maxlength="24" value="${esc(me.name)}" required autocapitalize="words" autocorrect="off" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <form data-form="rename-group" class="field" style="gap:6px" autocomplete="off"><label class="field-label" for="f-group">Group name</label><div class="pair"><input id="f-group" type="text" name="name" maxlength="40" value="${esc(s.group.name)}" required autocapitalize="words" enterkeyhint="done"><button class="btn ghost">Save</button></div></form>
         <div class="field"><span class="field-label">People</span><div class="people">${list}</div></div>
-        ${shell ? `<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>` : ''}
-        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button><button class="link danger" data-act="wipe">${ui.confirm === 'wipe' ? 'Tap again to delete for everyone' : 'Delete this group'}</button>${shell ? `<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>` : ''}</div>
+        ${/* ios:cut */!shell ? '' : /* ios:end */`<div class="field"><span class="field-label">Remind me to answer</span><div class="people"><div class="person"><span>Thursday, 6 pm</span><button class="link" data-act="remind" aria-pressed="${remindOn()}">${remindOn() ? 'Turn off' : remindBlocked ? 'Open Settings' : 'Turn on'}</button></div></div></div>`}
+        <div class="foot-links"><button class="link danger" data-act="leave">${ui.confirm === 'leave' ? 'Tap again to leave' : 'Leave this group'}</button><button class="link danger" data-act="wipe">${ui.confirm === 'wipe' ? 'Tap again to delete for everyone' : 'Delete this group'}</button>${/* ios:cut */!shell ? '' : /* ios:end */`<a class="link quiet" href="mailto:support@teloone.au?subject=${encodeURIComponent('Report a Muster group')}&amp;body=${encodeURIComponent(`${SITE}/g/${G.id}\n\nWhat's wrong: `)}">Report this group</a>`}</div>
       </div>`;
   }
 
@@ -1190,12 +1209,15 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return false;
   }
 
-  // Hand a message and the group's link to the share sheet, or copy them.
+  // Hand a message and the group's link to the share sheet.
   async function send(text, url = `${SITE}/g/${G.id}`) {
-    if (shell) return tell({ type: 'share', title: G.state.group.name, text: `${text}\n${url}` });
+    /* ios:cut */if (shell) /* ios:end */return tell({ type: 'share', title: G.state.group.name, text: `${text}\n${url}` });
+    /* ios:cut */
+    // With no app to ask: the page's own share sheet where there is one, or the link is copied.
     const copy = async () => { try { await navigator.clipboard.writeText(url); toast('Link copied'); } catch (x) { toast("Couldn't copy the link."); } };
     if (!navigator.share) return copy();
     try { await navigator.share({ title: G.state.group.name, text, url }); } catch (e) { if (e && e.name !== 'AbortError') await copy(); }
+    /* ios:end */
   }
 
   // The strip is moved, if it must be, so a tile is wholly in sight with a little room either side.
@@ -1210,7 +1232,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const i = +d.i, said = ((G.state.marks[G.me] || {})[d.w] || L.BLANK)[i];
       if (!(d.set && said === d.v)) push({ t: 'mark', m: G.me, w: d.w, i, v: said === d.v ? '-' : d.v });
       // A drag has ticked on its way; a tap gets its own.
-      if (shell && !d.set) tell({ type: 'haptic', kind: 'tick' });
+      if (/* ios:cut */shell && /* ios:end */!d.set) tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="mark"][data-w="${d.w}"][data-i="${i}"][data-v="${d.v}"]`);
       if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(ANSWERS, said)); }
@@ -1256,7 +1278,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (on && got.length === 1) return;
       const next = on ? got.filter(x => x !== i) : [...got, i];
       push({ t: 'rsvp', p: p.id, m: G.me, v: p.rsvp[G.me], s: next.length === all.length ? 0 : L.maskOf(next) });
-      if (shell) tell({ type: 'haptic', kind: 'tick' });
+      /* ios:cut */if (shell) /* ios:end */tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="part"][data-p="${d.p}"][data-i="${i}"]`); if (el) el.focus({ preventScroll: true });
     },
@@ -1264,21 +1286,24 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
       const said = p.rsvp[G.me] || '';
       if (!(d.set && said === d.v)) push({ t: 'rsvp', p: d.p, m: G.me, v: said === d.v ? '' : d.v, s: (p.part && p.part[G.me]) || 0 });
-      if (shell && !d.set) tell({ type: 'haptic', kind: 'tick' });
+      if (/* ios:cut */shell && /* ios:end */!d.set) tell({ type: 'haptic', kind: 'tick' });
       render();
       const el = app.querySelector(`[data-act="rsvp"][data-p="${d.p}"][data-v="${d.v}"]`);
       if (el) { el.focus({ preventScroll: true }); glide(el.parentNode, d.from != null ? d.from : pos(REPLIES, said)); }
     },
-    // The phone's own calendar sheet in the apps; a calendar file on the website.
+    // The phone's own calendar sheet.
     cal(d) {
       const p = G.state.plans.find(x => x.id === d.p); if (!p) return;
       const t = L.planTimes(p), notes = `Planned with ${G.state.group.name} on Muster`;
-      if (shell) return tell({ type: 'calendar', title: p.text, start: t.start.getTime(), end: t.end.getTime(), notes });
+      /* ios:cut */if (shell) /* ios:end */return tell({ type: 'calendar', title: p.text, start: t.start.getTime(), end: t.end.getTime(), notes });
+      /* ios:cut */
+      // With no app to ask, on the website: a calendar file.
       const a = document.createElement('a');
       a.href = URL.createObjectURL(new Blob([L.planIcs(p, notes, new Date())], { type: 'text/calendar' }));
       a.download = 'muster-event.ics';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      /* ios:end */
     },
     scrap(d) { if (sure('scrap:' + d.p)) push({ t: 'plan', id: d.p, deleted: true }); render(); },
     invite() {
@@ -1422,7 +1447,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const id = rid();
       push({ t: 'plan', id, w: sh.w, i: sh.sel[0], text, by: G.me, ...(sh.sel.length > 1 ? { s: L.maskOf(sh.sel) } : {}) }, { t: 'rsvp', p: id, m: G.me, v: 'in' });
       // Events sit below the board, so the new one is brought into sight. Closing the sheet steps
-      // back in history, and the browser then puts the page where it was: the move waits for that.
+      // back in history, and the page is then put back where it was: the move waits for that.
       const show = () => { const el = app.querySelector(`[data-k="e:${id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); };
       if (history.state && history.state.sheet) window.addEventListener('popstate', () => setTimeout(show, 50), { once: true }); else show();
       closeSheet(); render();
@@ -1456,7 +1481,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     }
     g.p = Math.max(0, Math.min(2, (e.clientX - g.left) / g.step - .5));
     const k = String(Math.round(g.p));
-    if (k !== g.el.dataset.pos) { g.el.dataset.pos = k; if (shell) tell({ type: 'haptic', kind: 'tick' }); else if (navigator.vibrate) navigator.vibrate(6); }
+    if (k !== g.el.dataset.pos) { g.el.dataset.pos = k; /* ios:cut */if (shell) /* ios:end */tell({ type: 'haptic', kind: 'tick' });/* ios:cut */ else if (navigator.vibrate) navigator.vibrate(6);/* ios:end */ }
     g.el.style.setProperty('--p', g.p);
   });
   const drop = e => {
@@ -1609,9 +1634,9 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     else if (e.key === 'Escape' && ui.menu) acts.menu();
     // On a phone the keyboard's done key puts the keyboard away. Only Post posts,
     // once the day has been looked at.
-    if (e.key === 'Enter' && !e.isComposing && (shell || matchMedia('(pointer: coarse)').matches) && e.target.matches && e.target.matches('form[data-form="event"] input[name=text]')) { e.preventDefault(); e.target.blur(); }
+    if (e.key === 'Enter' && !e.isComposing && /* ios:cut */(shell || matchMedia('(pointer: coarse)').matches) && /* ios:end */e.target.matches && e.target.matches('form[data-form="event"] input[name=text]')) { e.preventDefault(); e.target.blur(); }
   });
-  if (shell) {
+  /* ios:cut */if (shell) /* ios:end */{
     shell.onmessage = e => {
       let m; try { m = JSON.parse(e.data); } catch (x) { return; }
       if (m.type === 'info') {
