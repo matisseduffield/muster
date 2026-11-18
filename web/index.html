@@ -632,8 +632,10 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   }
 
   let busy = false, fails = 0, again = 0;
+  // Groups being left: nothing is fetched for one until the server has answered.
+  const leaving = new Set();
   async function sync() {
-    if (!G || !G.id || busy) return;
+    if (!G || !G.id || busy || leaving.has(G.id)) return;
     const g = G;
     busy = true;
     clearTimeout(again);
@@ -643,6 +645,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const res = sending.length
         ? await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: sending }) })
         : await fetch(`${API}/api/g/${g.id}`, { cache: 'no-store', headers: g.state && g.state.group.version ? { 'If-None-Match': `"${g.state.group.version}"` } : {} });
+      if (leaving.has(g.id)) { busy = false; return; }
       if (res.status === 304) {
         ok = true;
       } else if (res.ok) {
@@ -652,10 +655,11 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         g.state = fresh;
         ok = true;
         if (!g.left) { persist(g); if (g.me) remember(g); }
-      } else if (res.status === 404) {
-        g.gone = true; g.queue = []; ok = true; forget(g.id);
-      } else if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429 && sending.length) {
-        // The server won't take these: drop them rather than jam the queue.
+      } else if (res.status === 404 && (await res.json().catch(() => ({}))).error === 'No such group') {
+        // Only the server's own word for it: any other 404 is a fault on the way, tried again.
+        g.gone = true; g.queue = []; ok = true; if (saved.some(s => s.id === g.id)) g.why = 'deleted'; forget(g.id);
+      } else if (res.status >= 400 && res.status < 500 && res.status !== 404 && res.status !== 408 && res.status !== 429 && sending.length && g.state.group.version) {
+        // The server won't take these: drop them rather than jam the queue. (A group it has never had keeps them and tries again.)
         g.queue = g.queue.slice(sending.length); if (!g.left) persist(g); ok = true;
       } else throw new Error(String(res.status));
     } catch (e) {
@@ -725,7 +729,8 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     render();
   }
   let path = location.pathname;
-  function go(to) { history.pushState(null, '', to); path = location.pathname; route(); }
+  // A form that led somewhere gives up its place, so Back doesn't return to it.
+  function go(to, swap) { history[swap ? 'replaceState' : 'pushState'](null, '', to); path = location.pathname; route(); }
   // Back closes an open sheet and stays on the board.
   window.addEventListener('popstate', () => {
     // An open list goes before anything else: Back puts it away and leaves its sheet open.
@@ -920,6 +925,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const [h, p] = G.why === 'none' ? ["That code doesn't lead to a group.", 'Codes last a week. Ask for a new one.']
       : G.why === 'many' ? ['Too many tries.', "Wait an hour, or open the group's link."]
       : ["This link doesn't lead to a group.", "Check it's the whole link, or ask whoever sent it."];
+    if (G.why === 'deleted') return `${bar()}<div class="lone"><h1>This group was deleted.</h1><a class="btn" href="/" data-nav data-swap>${saved.length ? 'Your groups' : 'Start a group'}</a></div>`;
     return `${bar()}<div class="lone"><h1>${h}</h1><p>${p}</p><a class="btn" href="/" data-nav>Start a group</a></div>`;
   };
   const failed = () => `${bar()}<div class="lone"><h1>Can't reach Muster.</h1><p>Check your connection.</p><button class="btn" data-act="retry">Try again</button></div>`;
@@ -958,12 +964,12 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
         ${ui.menu ? `<div class="scrim" data-act="menu"></div><div class="menu" role="menu"><button class="menu-row" role="menuitem" data-act="settings">${GEAR}<span>You and the group</span></button><button class="menu-row" role="menuitem" data-act="about">${INFO}<span>About</span></button></div>` : ''}
       </header>
       ${G.offline ? `<p class="status">Can't reach Muster. Your changes will send when you're back online.</p>` : ''}
+      ${strip(list, at, now)}
+      ${at ? days(at, now) : ''}
       <section class="section">
         <div class="sec-head"><h2>Events</h2><button class="link" data-act="event">New event</button></div>
         ${events.length ? `<div class="events">${events.map(event).join('')}</div>` : `<p class="empty">No events yet.</p>`}
-      </section>
-      ${strip(list, at, now)}
-      ${at ? days(at, now) : ''}`;
+      </section>`;
   }
 
   // Where the knob sits: 0, 1 or 2, or '-' before you've answered.
@@ -1042,10 +1048,10 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     const groups = REPLIES.map(r => [r[0], r[1], s.members.filter(m => p.rsvp[m.id] === r[0])]);
     const sure = ui.confirm === 'scrap:' + p.id;
     const got = L.planPart(p, G.me);
-    const part = all.length > 1 && (mine === 'in' || mine === 'maybe') ? `<div class="ev-part${all.length > 2 ? ' long' : ''}"><span>You can make</span><div class="seg" role="group" aria-label="The parts you can make">${all.map(i => `<button data-act="part" data-p="${p.id}" data-i="${i}" aria-pressed="${got.includes(i)}">${oneDay ? L.SLOTS[i].part[0].toUpperCase() + L.SLOTS[i].part.slice(1) : L.slotName(i)}</button>`).join('')}</div></div>` : '';
+    const part = all.length > 1 && (mine === 'in' || mine === 'maybe') ? `<div class="ev-part"><span>You can make</span><div class="seg${all.length > 2 ? ' five' : ''}" role="group" aria-label="The parts you can make">${all.map(i => `<button data-act="part" data-p="${p.id}" data-i="${i}" aria-pressed="${got.includes(i)}">${oneDay ? L.SLOTS[i].part[0].toUpperCase() + L.SLOTS[i].part.slice(1) : all.length > 2 ? `${L.SLOTS[i].day}<br>${L.SLOTS[i].part}` : L.slotName(i)}</button>`).join('')}</div></div>` : '';
     const a = L.slotDate(p.w, all[0]), b = L.slotDate(p.w, all[all.length - 1]), span = a.getTime() !== b.getTime();
     const month = d => d.toLocaleDateString('en-AU', { month: 'short' });
-    const date = `<div class="ev-date${span ? ' wide' : ''}${L.key(a) === L.key(now) ? ' now' : ''}" aria-hidden="true"><b>${a.getDate()}${span ? `–${b.getDate()}` : ''}</b><span>${month(b)}</span></div>`;
+    const date = `<div class="ev-date${span ? ' wide' : ''}${L.key(a) === L.key(now) ? ' now' : ''}" aria-hidden="true"><b>${a.getDate()}${span ? `–${b.getDate()}` : ''}</b><span>${month(a) === month(b) ? '' : month(a) + '–'}${month(b)}</span></div>`;
     // The foot of the card: the calendar on the left once you're coming, and
     // on the right, for whoever called it, taking the event down.
     const foot = (mine === 'in' || mine === 'maybe' ? `<button class="link quiet" data-act="cal" data-p="${p.id}">Add to calendar</button>` : '')
@@ -1104,7 +1110,6 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     return `${sheetHead('Invite')}
       <div class="sheet-body">
         <div ${sh.code ? `role="img" aria-label="Join code ${sh.code.split('').join(' ')}"` : 'aria-busy="true"'}>${cells(sh.code || '').replace(' class="at"', '')}</div>
-        <p class="hint">Works for a week.</p>
         <button class="btn wide" data-act="shareCode"${sh.code ? '' : ' disabled'}>Share code</button>
         <div class="invite-foot"><button class="link quiet" data-act="shareLink">Share the link instead</button></div>
       </div>`;
@@ -1302,15 +1307,30 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     close() { closeSheet(); },
     remove(d) { if (sure('remove:' + d.id)) push({ t: 'member', id: d.id, removed: true }); render(); renderSheet(); },
     leave() {
-      if (!sure('leave')) return renderSheet();
       const g = G;
-      g.left = true;
+      if (leaving.has(g.id)) return;
+      if (!sure('leave')) return renderSheet();
+      leaving.add(g.id); renderSheet();
       const ops = [...g.queue, { t: 'member', id: g.me, removed: true }];
-      (async () => {
-        for (let k = 0; k < ops.length; k += SLICE) await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: ops.slice(k, k + SLICE) }) });
-      })().catch(() => {});
-      forget(g.id);
-      go('/');
+      // A group the server never had is only on this phone.
+      const sent = g.state.group.version ? (async () => {
+        for (let k = 0; k < ops.length; k += SLICE) {
+          const res = await fetch(`${API}/api/g/${g.id}/ops`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ops: ops.slice(k, k + SLICE) }) });
+          if (res.status === 404) break;
+          if (!res.ok) return false;
+        }
+        return true;
+      })() : Promise.resolve(true);
+      sent.catch(() => false).then(ok => {
+        leaving.delete(g.id);
+        // The group may have been opened afresh meanwhile: it is known by its id.
+        const here = G && G.id === g.id ? G : null;
+        if (!ok) { toast("Couldn't leave. Try again when you're online."); if (here) { ui.confirm = null; renderSheet(); } return; }
+        g.left = true; g.queue = [];
+        if (here) { here.left = true; here.queue = []; }
+        forget(g.id);
+        if (here) go('/'); else if (!G) render();
+      });
     },
     wipe() {
       if (!sure('wipe')) return renderSheet();
@@ -1350,7 +1370,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
     // Four letters. A pasted group link still works.
     async link(f) {
       const raw = f.link.value.trim(), m = raw.match(/(?:^|\/g\/)([A-Za-z0-9_-]{22})\/?(?:[?#].*)?$/);
-      if (m) return go('/g/' + m[1]);
+      if (m) return go('/g/' + m[1], true);
       const code = raw.toUpperCase(), u = ui;
       if (!/^[A-Z]{4}$/.test(code)) { f.link.focus(); return; }
       if (u.seeking) return;
@@ -1358,7 +1378,10 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const r = await find(code);
       u.seeking = false;
       if (u !== ui || step() !== 'link') return;
-      if (r.id) return go('/g/' + r.id);
+      // Retyped while we were asking: this answer is for the old code.
+      const now = app.querySelector('input[name=link]');
+      if (now && now.value.trim().toUpperCase() !== code) return forms.link(now.form.elements);
+      if (r.id) return go('/g/' + r.id, true);
       ui.bad = r.err; ui.code = code; render();
       const el = app.querySelector('input[name=link]'); if (el) el.focus();
     },
@@ -1369,7 +1392,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       const g = { id, me, state: { group: { id, name, version: 0 }, members: [], marks: {}, plans: [] }, queue: [] };
       [{ t: 'group', name }, { t: 'member', id: me, name: mine }].forEach(op => { L.applyOp(g.state, op); g.queue.push(op); });
       persist(g); remember(g);
-      go('/g/' + id);
+      go('/g/' + id, true);
     },
     join(f) {
       const mine = clean(f.me.value, 24);
@@ -1398,6 +1421,10 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
       if (!text || !sh.sel.length) return;
       const id = rid();
       push({ t: 'plan', id, w: sh.w, i: sh.sel[0], text, by: G.me, ...(sh.sel.length > 1 ? { s: L.maskOf(sh.sel) } : {}) }, { t: 'rsvp', p: id, m: G.me, v: 'in' });
+      // Events sit below the board, so the new one is brought into sight. Closing the sheet steps
+      // back in history, and the browser then puts the page where it was: the move waits for that.
+      const show = () => { const el = app.querySelector(`[data-k="e:${id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); };
+      if (history.state && history.state.sheet) window.addEventListener('popstate', () => setTimeout(show, 50), { once: true }); else show();
       closeSheet(); render();
     },
   };
@@ -1447,7 +1474,7 @@ if ('serviceWorker' in navigator && !window.musterApp) navigator.serviceWorker.r
   document.addEventListener('click', e => {
     if (Date.now() - dragged < 350 && e.target.closest('.slide')) return;
     const nav = e.target.closest('a[data-nav]');
-    if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); return go(nav.getAttribute('href')); }
+    if (nav && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); return go(nav.getAttribute('href'), nav.hasAttribute('data-swap')); }
     // A field that chooses from a list opens the list, or puts it away.
     const pick = e.target.closest('[data-pick]');
     if (pick) return picking === pick ? closePick() : openPick(pick);

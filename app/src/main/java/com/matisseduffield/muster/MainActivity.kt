@@ -100,8 +100,8 @@ class MainActivity : ComponentActivity() {
             settings.domStorageEnabled = true
             settings.allowFileAccess = false
             settings.allowContentAccess = false
-            // Follow the phone's font size setting.
-            settings.textZoom = (resources.configuration.fontScale * 100).toInt()
+            // Follow the phone's font size setting, as far as the answer tracks have room for.
+            settings.textZoom = (resources.configuration.fontScale * 100).toInt().coerceAtMost(115)
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
                     view: WebView,
